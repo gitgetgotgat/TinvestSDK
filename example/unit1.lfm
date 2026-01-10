@@ -1,0 +1,2187 @@
+object Form1: TForm1
+  Left = 255
+  Height = 727
+  Top = 133
+  Width = 1281
+  Caption = 'T-Invest API'
+  ClientHeight = 727
+  ClientWidth = 1281
+  Icon.Data = {
+    B11D000000000100010000000000010020009B1D00001600000089504E470D0A
+    1A0A0000000D494844520000025A000002590802000000FEAD0C130000000970
+    4859730000000000000000009D62263200001D4D49444154789CEDDD8B8FA5F5
+    7DDFF1FC43D999DD8D193712DD5C242029B99150258DB12BD7A92F8A5C115ACB
+    915DD4C4C117A226B1690DB1028EA24D9AA058CE1AD5AEDD18596D142336380D
+    4984ED00C35206B3B02CBB87656077F63CDFCE9983A7C3CE5EE6F2FC9EE77779
+    BDF5FA033CB3CB7E7CCE73F9FD40D775214952DBFD80399424C91C4A92640E25
+    49328792248539942429CCA12449610E25490A7328495298434992C21C4A9214
+    E65092A4308792248539942429CCA12449610E25490A7328495298434992C21C
+    4A9214E65092A4308792248539942429CCA12449610E25490A73284952984349
+    92C21C4A9214E65092A4308792248539942429CCA12449610E25498A9EE770F5
+    D1EEC903F1D40F024052DDE94F475CE86DBFCC210025328700600E01C01C0240
+    98430008730800610E0120CC21008439048030870010E61000C21C0240984300
+    08730800610E0120CC21008439048030870010E61000C21C0240984300087308
+    00610E0120CC21008439048030870010E61000C21C024098430008730800610E
+    0120CC21008439048030870010E61000C21C024098430008730800610E0120CC
+    21008439048030870010E61000C21C024098430008730800610E0120CC210084
+    39048030870010E61000C21C024098430008730800610E0120CC210084390480
+    30870010E61000C21C024098430008730800610E0120CC210084390480308700
+    10E61000C21C024098430008730800610E0120CC21008439048030870010E610
+    00C21C024098430008730800610E0120CC21008439048030870010E61000C21C
+    024098430008730800610E0120CC21008439048030870010E61000C21C024098
+    430008730800610E0120CC21008439048030870010E61000C21C024098430008
+    730800610E0120CC21008439048030870010E61000C21C024098430008730800
+    610E0120CC21008439048030870010E61000C21C024098430008730800610E01
+    20CC21008439048030870010E61000C21C024098430008730800610E0120CC21
+    008439048030870010E61000C21C024098430008730800610E0120CC21008439
+    048030870010E61000C21C024098430008730800610E0120CC2100843924B5BF
+    F9D2C2EF7F7211EA76FCD842F7E4F8FFB9B11FE690B43EF7A9C51FFAA1C352DD
+    7DF6AEC58BDF1DFF3F37F6C31C929639540B99C30A9843D232876A2173580173
+    485AE6502D640E2B600E49CB1CAA85CC6105CC21699943B59039AC8039242D73
+    A8163287153087A4650ED542E6B002E690B4CCA15AC81C56C01C929639540B99
+    C30A9843D232876A2173580173485AE6502D640E2B600E49CB1CAA85CC6105CC
+    21699943B59039AC8039242D73A8163287153087A4650ED542E6B002E690B4CC
+    A15AC81C56C01C929639540B99C30A9843D232876A2173580173485AE6502D64
+    0E2B600E49CB1CAA85CC6105CC21699943B59039AC8039242D73A81632871530
+    87A4650ED542E6B002E690B4CCA15AC81C56C01C929639540B99C30A9843D232
+    876A2173580173485AE6502D640E2B600E49CB1CAA85CC6105CC21699943B590
+    39AC8039242D73A8163287153087A4650ED542E6B002E690B4CCA15AC81C56C0
+    1C929639540B99C30A9843D232876A2173580173485AE6502D640E2B600E49CB
+    1CAA85CC6105CC21699943B59039AC8039242D73A8163287153087A4650ED542
+    E6B002E690B4CCA15AC81C56C01C929639540B99C30A9843D232876A21735801
+    73485AE6502D640E2B600E49CB1CAA85CC6105CC21699943B59039AC8039242D
+    73A8163287153087A4650ED542E6B002E690B4CCA15AC81C56C01C929639540B
+    99C30A9843D232876A2173580173485AE6502D640E2B600E49CB1CAA85CC6105
+    CC21699943B59039AC8039242D73A8163287153087A4650ED542E6B002E690B4
+    CCA15AC81C56C01C929639540B99C30A9843D232876A2173580173485AE6502D
+    640E2B600E49CB1CAA85CC6105CC21699943B59039AC8039242D73A816328715
+    3087A495DB1C1EB9FEF0AFDC7668EEBE4F2CFEFE2713FAB7EF3C94D5CF9EBAF7
+    BC23F9AFF48EF71F9CFFD9FDC83F1FFBA77D6BE6B002E690B4469CC39B6FDAD8
+    BC4F2E7EE9FE85BFF9D2C2CA2343FF5DCAEDFF0AA4EEB31F5FBCF84F83FE869F
+    7FE4C0635F5A78E8FE85CF6DFC9F8F9FBAE9D058BF6F73580173485A434EC2FA
+    FEFDDAFB0E1EFDCCE2FAF84D1E6FEB67CFA1E1E7F0B21E7B68E14FEE997D8EFC
+    A99F186E1DCD6105CC2169A59E8423D71FBEF3F683C7EE5F786EF00F7FA3FFEC
+    B995C91C6EB5FEF1F1A10716FED31D07537FB96A0E2B600E492BD124AC7F10FC
+    ED8F2E7EFB2FB3FEEB610EB3F2DD870FFCEE9D8B893E329AC30A9843D2EA7712
+    8A58C1443F7BFE653E879B52ECA239AC803924ADBE26E1CEDB0F3EFCDF16BA27
+    C7FF8986FFD94BA99439DCF4D8430BBF79C7C1EBFAF8333287153087A4B5CF49
+    3872FDE1FB3EB178F6EFC6FF4186FFD98BABB8399C9B3CFE837F70F7E2CFECEF
+    C3A239AC803924AD3D4FC2CD371D3AF607857D1CECEB672FB442E770D37F7F60
+    E167FEC51E47D11C56C01C92D61E26A18221DCF3CF5E74A5CFE1DCDE46D11C56
+    C01C92D6AE26E1C8F587EB18C23DFCEC1554C71CCEED7614CD6105CC2169ED7C
+    12CABD46B8FF9FBD8E6A9AC3985F53FCEDC5EBAEDBD9CF6E0ECB670E496B2793
+    F02BB71D7AEE9B15FE419BC30A3CFFC881F7FFEB6BBF7BD61C56C01C92D6D527
+    E1C8F5878F7E7AB19A6F4777F5B3D757957338F7A7FF75F1C77EE4AA3FBB392C
+    9F3924ADAB4CC22FDD52E787C29DFCEC5556F11CC6B53E269AC30A9843D2BAD2
+    24DCF7896A3F145EF367AFB5BAE770EE4A5713CD6105CC21696D9F8423D71F2E
+    EEFD327DFDEC75D7C21CC6C6BB6C7EFC47B7FDECE6B07CE690B42E99849B6F3A
+    54CA1B477BFFD9ABAF91398C8DB79EDEF62FDFF2C5A939AC803924ADAD93F04B
+    B71CAAEC518A9DFFEC2DD4CE1CC6C66318EFDCB288E6B002E690B43627A1B52D
+    0C7358BBF545FCD87F3878DDDB367E7673583E73485AF34968700BC31CB6E163
+    1F9A2DA239AC803924ADF549F8573FDFE21686396CC6877EF5E07D9F3087C533
+    87A4F58D3F5D983C3EFEFF8C5198C346ACFF0DFFC69F3571B374DDCC21A4620E
+    A120E61052318750107308A998432888398454CC2114C41C422AE6100A620E21
+    157308053187908A398482984348C51C4241CC21A4620EA120E6105231875010
+    7308A998432888398454CC2114C41C422AE6100A620E21157308053187908A39
+    8482984348C51C4241CC21A4620EA120E61052318750107308A9984328883984
+    54CC2114C41C422AE6100A620E21157308053187908A398482984348C51C4241
+    CC21A4620EA120E61052318750107308A998432888398454CC2114C41C422AE6
+    100A620E21157308053187908A398482984348C51C4241CC21A4620EA120E610
+    52318750107308A998432888398454CC2114C41C422AE6100A620E2115730805
+    3187908A398482984348C51C4241CC21A4620EA120E61052318750107308A998
+    432888398454CC2114C41C422AE6100A620E21157308053187908A3984829843
+    48C51C4241CC21A4620EA124AF7E39BAB5DEF6CB1CC22673082539F7BF222EF6
+    B65FE6103699432889398444CC2194C41C4222E6104A620E2111730825C97A0E
+    D756CC21E532875092ACE730C21C522E730825B978327ADD2F73086F32875092
+    6EB5C7F10A73089BCC219424F3399C3E73E3F8BF23D813730825C97C0EBB9577
+    8FFF3B823D3187508AE9899F8DA9398434CC2194A27BEEB698BEDEE37845FF73
+    F8C20747FF35C1DE98432845017318A7EF75370D853287508AEEC58F4577BECF
+    F13287B0C91C42297A3FEC30FA9FC3C95F98430A650EA118AFDC1FD3CCE7D06B
+    4B2996398462F4FD86B6E87F0ECF3F610E29943984621430875E4C43B1CC2114
+    A3EF17968639844DE6108AD1F72B6922C91C7A129F32994328428A57D2449239
+    F4243E653287508414CFE0478A39F4E821853287508414CFE04792393C7BD41C
+    522273084548F10C7E2499438F1E522673086548F094452499C3E9C41C522273
+    086578FD6FA32B620E3D6B4199CC219421C15316916A0E3D6B4181CC21E42FD1
+    5316916A0E5FFCC8E8BF32D82D7308F9EB9E7F5F746FF43E5B91680E3D6B4189
+    CC21E42FD16DA5916A0EDD5C4A81CC2114E0D52F47B7D6FF6CA59A4337975220
+    730805B8F05474D3FE672BD51C46744FBF7DFCDF1AEC86398402A4B9AD3412CE
+    A19B4B298D3984CC257A5BE9BC5473E86E1A8AD3DA1CDEFDD1C58BDF1DFFD70E
+    3B97E86DA5F392CDE1B9AF9B43CAF21B771C6C6A0EDFF38E436BE690B24C1E4C
+    F17AB679C9E6706DC51C5296F7BEEB903984ACA5793DDBBC647318317DE6C6F1
+    7F77B063E610B2B6BC94EE3E9A483A87CE01A62CADCDE12FFEDCA1B5EF8CFF6B
+    871D4A7A1F4D249D43071F52961F3F32F6400DDE05734839BA9753BD8F665ECA
+    39F46E1A8AB2F4B6B1D769F0CC21254973CCE16629E7D0494F14A5C1397CF95B
+    E3FFDA61A7525E388CE473E8617C0AF1DDAF1F785B7B73F8C81717BA27C7FFE5
+    C335A53BD769B3B473E8617C4AF1D8430BE610B2D5BDF45BE91EC09F97780E5D
+    3EA4100F3DB0F0B6966E2B9DF747BFB73835871421D941169B259E43970F2944
+    6B6F689BE7B5A514E3E2C948BC56E9E7D0E5434AD0DA1BDAE6DDFEDE839EC427
+    7F035C388C01E6D0D38714A1B567F0E779310D4548FDC4E1BCF47378FE097348
+    FE7EACBD67F0E779F49002247EE2705EFA3974143025B8AEBDDB4AE779F490DC
+    257E55E96683CCE18B1F19FF170A57D6E65316F33C6B41E6BAE7DF17DD1BA977
+    2A869943671F92B9369FB298E7590B727736E119875B1B640EA7137348CE7EE7
+    CE169FB29877F747172FBA9B869CA57FC462DE2073E8B027F2D6E66DA5F3DC5C
+    4ACE8679C462DE4073E8710B72D6EC6DA5F3DC5C4ABE5EB93FA6C91FB19837D4
+    1CAEAD9843F2B4F2488B2FEFDEDA3F7EF580BB69C8D485A7A29B0E3152C3CD61
+    C4F4D95BC7FFCDC236DFF8B3766F2B9DF7C5CFB9B9941C4D976F88EEF561162A
+    869C43DF9792A796EFA399E76E1AF234C029165B1B700E7D5F4A967EF9170EB5
+    BD86877FF1E70EADB97C48865EFF5674433C62316FC039F47D29596AF67D345B
+    F36E1A7233F037A531F01CC619DF97929796DF47B3B5FFF9C72E1F9297615EDB
+    BDB561E7D0F7A564C685C3792E1F929D01EF299D37EC1C3AFE90CCB87038CFE5
+    43B232E4D3F79B0D3D87F1EA311F10C9C4E471170EFF7F27FECA7F986463C0A7
+    EF371B7C0EBDBF946CB4FCE6EEED79FA908C0CF59ED2AD0D3E871BE73D754F59
+    44C6F71B771C74E170B3DBDF7BD0CB4BC9C160273A5DD20873E8BC2732D1F8AB
+    4AB7E7E5A564E1D52F47B736F4308D338711D3676E1CFF374EDBBC9B6D7B1EB7
+    607CCB4BD10D7D13CDBC71E6304EDFEB0322E3F24DE9F6EEBCFDA0C72D18D7C0
+    2F66DBDA4873E80144C6E69BD2ED1DB9DEF7A58CEDFCD08F1B6E36D21C3A1098
+    51F9A6F44AB9BF941175CFDD36CA4D34F3469BC3587DD40744C6F2EF3FE09BD2
+    CBE7FE52C634D24D34F3C69B4337D430124FDF5F3DCFE3338AD93BBBA783BEB3
+    FB92C69C436FF466147F72CFA2A7EFAFD2673FBE78F19FC6FF63A235DDA94F47
+    37F49B68B636EA1C4E27DDD36F1FFDCF80D6FCF44F1E1A7B71B2EEE69BBCBF94
+    318CF1269AAD8D3A87DE50C3E0DC44B3933C80C8C0BA173F3CD6F3159B8D3C87
+    9EB86060EF7DD72137D15CB3F7BCE3901B6A18D478CF576C36F61CFA80C880BE
+    F3F5033E1AEEB047BEE803220319F7F98ACDC69F434F5C30186FA2D979DE50C3
+    705EFBDF1117475EA22CE6D099C00C62E5111F0D7797272E184077E296E14FFA
+    BD6C59CCA10F880CC047C3DDE6917C8670F6C11C3E1A462E7318317DF6D6F1FF
+    54A8D7630FB9A1742FB9824852A33F7ABFB55CE6305E3DE60322E9B8A1746FB9
+    C594B4B2F9681819CDA177B691CCEC59435BB8D73C834822597D348CACE6D007
+    4452983CEE3534FBEAE69B0E9DFED6F87F8E5428A78F8691D71CFA804802FFF9
+    CE455F93EEB3BB3FBAE8A10BFAB5F1D1308B1B4A37CB6B0E7D40A45F9EBBEF2B
+    F7D4D0B3CC3E1A467673E81944FAE36BD21EF395293DCAF0A3616438879E41A4
+    2F1E34EC37EFA9A137E7BE32E231BF572ABF39F401913E3CF480BB49FBEF8B9F
+    5B98FACA94FDC9E40DA5DBCB710E7D40649FBEF3F5033F7A64ECE9A8B123D71F
+    FEC7AF1D7011917DC9E30DA5DBCB720E1D730150A36C3F1A46B673E81C44800A
+    9D7F72FDF3CED80373F9729DC3F54EDF6B1101AAD19DBAAB1BFBC8FBAB94F11C
+    4E27DDD36F1FFDCF0F801E2C2FC5DAC9C87671B29EC3F0543E402DCE3C90E1C3
+    155BCB7B0E3D740150BEEEC42D5D7ECFDD5F52EE73E8A10B80E2E5FA70C5D6B2
+    9FC3F50F88A73E6511010AD5BDF8E1C8F80E9ACD0A9843F7D400942AFB3B6836
+    2B610EC33D3500657AE581FCBF269D57C81CBAA706A03439BF83667BC5CCE1EC
+    3D35BE320528C8F9FF13311D7B3C765A397318DE5303508CEED4A7637A61ECD9
+    D84545CDE1FAFFCD78F6D6D1FF8C01B8BAE9895B228AF99A745E617318E79FF0
+    01112077457D4D3AAFB4390C5F990264ADB8AF49E7153887BE3205C855895F93
+    CE2B720EDD650A90A902BF269D57E61CAE77E6A8AF4C01F252CE43F7DB2B760E
+    23BA173E38FE9F3D001BCA7AE87E7B05CFA1779902E46279292E3CBDFE3965EC
+    61D87B25CF6138FE09200FE7BE52EED7A4F30A9F43C73F018CAD3B755774E53D
+    597149C5CF6178EE02603CD3676E29FA92E16635CCA1E72E00C651FE25C3CDAA
+    98C3701111600CE55F32DCAC96390C2F6F0318541D970C37AB680E379E44EC9E
+    B28800C995FE94E1F6AA9AC3984EA6CFDC38FADF1280BA4D976F888B2F8DFD2F
+    7ECFD53587B1710294DB6A00D2595E8A374A7D31E955AA6E0ED77BED61171101
+    5239FB6035B7CF6CADC6390CB7D5002451D9ED335BAB740E23BA173F6211017A
+    D49DFC7074E7C7FED73D55D5CE61785B0D407F666F9FA9EEF699ADD53C87B31B
+    4D2D22C0BE55792BE925553D87E14653807DABF456D24BAA7D0EC32202EC4F03
+    5B184DCC6178F40260AFCE3E185D858F556CAF8D395C6F72CC2202EC4E335B18
+    0DCD615844805DE85EFE4C746B63FFC33D5C2DCD614477EA531611E09ABA931F
+    8A69B58F185EB6B6E6303C9E0F702D0D6E61343887611101AEACCD2D8C36E730
+    2C22C0E534BB85D1EC1C86450478AB96B7305A9EC3B08800DFD7F81646E37318
+    1611C0166ED4FA1C864504DA660BE799C359161168932DDCCC1C7EBF33472D22
+    D0145BB83573B8256F7103DA71E6C1A6DEC176CDCCE15BB388400B6CE1B6CCE1
+    B6561F753E2250ADE5A5987C25A295732A769E39BC5C4E0C06AA343FD7BEABFF
+    2CDF3D640EAFD074327DF6D6F1FFEE02F4647AE2E7E3C272847FF32F9F39BC72
+    D349B7F2EED1FF0603ECDF6C0BA7A7C6FE5735EBCCE135F24822503A0F54EC24
+    73B883DC6E0A94EBCCE7DD38B393CCE1CE72BB29509CE5A578EDAF6CE10E3387
+    3B6E6DC5CD35402966170B5FFF3B3791EE3C73B89BA613971281FC6D5C2C3C3D
+    F6BF9885650E779F4B8940CE5EF9BC2F48F79039DC53E79F983E73E3F87FE901
+    B65A5E8AF3BE20DD63E670AF4D27DD0B1FEC9EF23111C842F7DC6DB1E6C9C2BD
+    670EF79763A1801CF88274DF99C37D77FE09779C0263992EDFE00ED25E32877D
+    349D74A73EE5632230B0D91DA417DD41DA4FE6B0BFCE3DEC517D6020CB4BF1EA
+    FFF005698F99C35E737F0D905EF7C2FBE3E2CB63FF7B575BE630413E260289AC
+    7F283CFBE70EB24F91394CD3FC63A2AB89407F7C284C9A394C998F89402F5C29
+    4C9F394C9C9B4E81FD71FBE83099C3415A7DD4B389C06ECD9E295CFDEBE87C28
+    1C22733860678EFAEE14D891E5A5EEF4677C3B3A64E670D81C11055CCBECDBD1
+    B56723FCE33C68E6708C561FED56DE3DFA7F72406E6667F6BEE6DBD1713287E3
+    3539E69428E04D1E281C3B73386AD3499CBED777A7D0B8EEF43D317D65EC7F8F
+    5ACF1C66D0DA8A67F6A14D1B87149E70993087CC61367918035AE2218ADC3287
+    993539E6610CA8DCF2529CF9430F51E49639CC2F2FB2817A752FDDE532619E99
+    C35C5B5BE956DEEDAC28A846F77F6F8B37FEDE65C26C338779F7FA710F6340E9
+    6697095FFDAA6F4733CF1C96D0E97B5D50842279D75A3999C342F27637284D77
+    F2C3DEB55650E6B0A8CE3FE18222E46F769970F59B1EA2282B735860E71E7641
+    11F234BB4C38F9826F474BCC1C96D9FCED6E2E28424E66EF5ABBE8218A523387
+    25B7B6E28222E4A07BE1FD71C1BBD6CACE1C96DFEBC75D5084B1BC7924D3D4B7
+    A3C5670E6BC9DBDD6060F323995C26AC257358518E8B82A1742FFD9677AD5596
+    39AC2EC745414AB387285C26AC31735869DEEE067D9B3D44E13261BD99C3AA3B
+    73D40545E8C1F252F7B277AD559E39AC3DC745C1FECCDEB576F1F4D8FF252B79
+    E6B08DE6C7451945D80D47323595396C296F77839D992EDFD03992A9B1CC617B
+    79BB1B5CC5FC32A16F47DBCB1C3699E3A2E0721CC9D472E6B0E1E6C745194558
+    1FC2E7DE393B92C943140D670E9B6F72CC05459AB6BCE448268539D42CC745D1
+    AA8D23995C26D42C73A8EFE7ED6EB464762493CB84DA9239D45B5B3D3E7DF6D6
+    D1FFA98274664732B94CA86D99435D2EC74551A5E5A538F3F9E8D6C6FE0F4C39
+    660E75851C17455D1CC9A4AB670E75D5D656BAE7FF8D51A468DDCABB1CC9A46B
+    660EB583568F4F4FDC34FA3F6AB05BB32399CE7DCD4314DA49E6503BCE715114
+    C4914CDA65E650BBC971519460F6AE359709B5CBCCA1769FB7BB91ABD965C2F3
+    FFE032A1F69039D45E735C1439995D263CEB5D6BDA7BE650FBCBDBDD189D2399
+    D447E650FB6E6DC571518C657699D04314EA2373A89E5A3DEE8222437AF35D6B
+    86503D650ED56B8E8B62008E645282CCA1FACEDBDD48697699D043144A903954
+    9A1C1745DFBC6B4D4933874A99E3A2E8C374F986EEB5BF36844A9A3954FA1C17
+    C59E2D2FC52B9F77995003640E3548DEEEC6EE75A7EEF234A106CB1C6AC01C17
+    C5CE78D79A86CF1C6AF01C17C595BD7924D3D4B7A31A3A73A891F276372EB1BC
+    D49DBE27BAB5B1FF6AAAD1CCA1C66B3AE95EFA8FBE3B251CC9A40C32871ABB0B
+    DF7641B165B3CB841EA250069943E5D1B9875D506CCDC6914C7FEE210A659239
+    5436CDDFEEE682621BBC6B4DB9650E95598E8BAA5DF7BD0FC4DAB3BE1D556E99
+    436599E3A26AE44826E59C3954C64D8E75CBFF6CF47FC4E9C1EC482697099575
+    E65079E7B8A8F279D79A8AC81CAA841C1755A6D943142E13AA90CCA1CA69F5F8
+    F4190F639461F61085CB842A2A73A8D23A73D4C31859732493CACC1CAAC01C17
+    95ABEE05EF5A53A9994315DBDA4AB7E2ED6EB9985D267CC3914C2A3873A8C23B
+    F7B00B8AE39A5D267CF56BD14DC7FEAB20ED2B73A82A7AE53E171447303F92C9
+    B7A3AA2273A85A9A4EBA171D17359CD965C20B277C3BAA6A3287AAABF3DF7641
+    31F9103A924935660E556393638E8B4A627969762453E7210A55983954A5392E
+    AA6F2E13AAEECCA1AACEDBDD7A19C2EF7DC06542559F395403AD1E9F3E7BAB51
+    DC83D9914C2E13AA8DCCA19A6972AC7BDA71513BB6BC1467FED0BBD6D44EE650
+    2D35BFA0F8D4C2F86393B7D9914C2E13AAB1CCA1DACBDBDDAE32848E6452AB99
+    43B59AE3A2DE6AE35D6B5FF5AE35359B3954DB9D39DA2D377F4171FEAE359709
+    D576E650CD379D742FDFDDEE05C593BF1E174F8FFD67208D9F3994366AEFED6E
+    1B4732FDBDCB84D23C73286DA98DE3A2669709275FF0AE35696BE650DAD6E9FB
+    AABDA0B8BCD4BD7C4F5CF410857469E650BA5C6B2BF51D17D59DFC750F514857
+    CA1C4A576EF5781D1714BD6B4DBA66E650BA569363055F507CF348264F134AD7
+    C81C4A3B683A8957EEEB9E2CEC618CD9D3842E134A3BCB1C4A3BAE9CE3A2660F
+    515C3811FEEB96769C39947659DEC7454D9FBE215EFBA6CB84D26E3387D29ECA
+    F0B8A8F9914C9E2694F6943994F6DA74D29DCAE5ED6EDDA98F3B9249DA4FE650
+    DA5F6B2BDDF3EF19F1BBD3D965C2F3FFE0DB51699F9943A98F568F4F4FFCC4C0
+    4338BB4C78EE6B8650EA257328F5D7606F779B1DC9F45F5C26947ACC1C4ABD36
+    9DA47EBBDBEC5D6B2E134A7D670EA504A5392E6A7699D04314529ACCA194ACFE
+    8E8B9A5D263CFB05EF5A93D2650EA594CDDFEEB6BF0B8AB32399A667C6FE49A4
+    CA338752FAF67A5C54F7BD5F9D1DC9E43F52297DE6501AAADD1C17353B9269D5
+    654269B8CCA1346C9363DDF20F5F6D0B674732B94C280D9D3994066F3A993DA1
+    78B9E3A2BA531FEF1CC9248D913994466A6DA53BF9EF36BF3B752493346EE650
+    1AB58D0B8AB1FA88CB84D2B899434992CCA12449E65092A43087922485399424
+    29CCA12449610E25490A7328495298434992C21C4A9214E65092A43087922485
+    39942429CCA12449610E25490A7328495298434992C21C4A9214E65092A4F5FE
+    1F2DAD87AA8BA49B610000000049454E44AE426082
+  }
+  Position = poScreenCenter
+  LCLVersion = '4.4.0.0'
+  OnActivate = FormActivate
+  object txtToken: TEdit
+    Left = 88
+    Height = 23
+    Top = 16
+    Width = 1168
+    Color = clYellow
+    Font.Style = [fsBold]
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 1
+    TextHint = 'token'
+  end
+  object Memo1: TMemo
+    Left = 24
+    Height = 389
+    Top = 312
+    Width = 1232
+    Font.CharSet = RUSSIAN_CHARSET
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    Font.Style = [fsBold]
+    ParentFont = False
+    ReadOnly = True
+    ScrollBars = ssBoth
+    TabOrder = 0
+    WordWrap = False
+  end
+  object Label2: TLabel
+    Left = 24
+    Height = 15
+    Top = 16
+    Width = 34
+    Caption = 'Token'
+    Color = clYellow
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
+  object PageControl1: TPageControl
+    Left = 24
+    Height = 224
+    Top = 56
+    Width = 1232
+    ActivePage = TabSheet1
+    MultiLine = True
+    Options = [nboMultiLine]
+    TabIndex = 0
+    TabOrder = 2
+    object TabSheet1: TTabSheet
+      Caption = 'GetAccounts'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetAccounts: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetAccounts'
+        DoubleBuffered = True
+        Font.Style = [fsBold]
+        ParentDoubleBuffered = False
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetAccountsClick
+      end
+      object cmbGetAccounts: TComboBox
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 4
+        Items.Strings = (
+          'ACCOUNT_STATUS_UNSPECIFIED'
+          'ACCOUNT_STATUS_NEW'
+          'ACCOUNT_STATUS_OPEN'
+          'ACCOUNT_STATUS_CLOSED'
+          'ACCOUNT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'ACCOUNT_STATUS_ALL'
+      end
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'GetPortfolio'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetPortfolio: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetPortfolio'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetPortfolioClick
+      end
+      object txtGetPortfolio: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+    end
+    object TabSheet3: TTabSheet
+      Caption = 'GetShares'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetShares: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetShares'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetSharesClick
+      end
+      object cmbGetShares1: TComboBox
+        Left = 200
+        Height = 23
+        Top = 8
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'INSTRUMENT_STATUS_UNSPECIFIED'
+          'INSTRUMENT_STATUS_BASE'
+          'INSTRUMENT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'INSTRUMENT_STATUS_BASE'
+      end
+      object cmbGetShares2: TComboBox
+        Left = 200
+        Height = 23
+        Top = 48
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+          'INSTRUMENT_EXCHANGE_DEALER'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+      end
+    end
+    object TabSheet4: TTabSheet
+      Caption = 'GetBonds'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetBonds: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetBonds'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetBondsClick
+      end
+      object cmbGetBonds1: TComboBox
+        Left = 200
+        Height = 23
+        Top = 8
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'INSTRUMENT_STATUS_UNSPECIFIED'
+          'INSTRUMENT_STATUS_BASE'
+          'INSTRUMENT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'INSTRUMENT_STATUS_BASE'
+      end
+      object cmbGetBonds2: TComboBox
+        Left = 200
+        Height = 23
+        Top = 48
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+          'INSTRUMENT_EXCHANGE_DEALER'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+      end
+    end
+    object TabSheet5: TTabSheet
+      Caption = 'GetFutures'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetFutures: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetFutures'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetFuturesClick
+      end
+      object cmbGetFutures1: TComboBox
+        Left = 200
+        Height = 23
+        Top = 8
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'INSTRUMENT_STATUS_UNSPECIFIED'
+          'INSTRUMENT_STATUS_BASE'
+          'INSTRUMENT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'INSTRUMENT_STATUS_BASE'
+      end
+      object cmbGetFutures2: TComboBox
+        Left = 200
+        Height = 23
+        Top = 48
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+          'INSTRUMENT_EXCHANGE_DEALER'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+      end
+    end
+    object TabSheet6: TTabSheet
+      Caption = 'GetETFs'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetETFs: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetETFs'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetETFsClick
+      end
+      object cmbGetETFs1: TComboBox
+        Left = 200
+        Height = 23
+        Top = 8
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'INSTRUMENT_STATUS_UNSPECIFIED'
+          'INSTRUMENT_STATUS_BASE'
+          'INSTRUMENT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'INSTRUMENT_STATUS_BASE'
+      end
+      object cmbGetETFs2: TComboBox
+        Left = 200
+        Height = 23
+        Top = 48
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+          'INSTRUMENT_EXCHANGE_DEALER'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+      end
+    end
+    object TabSheet7: TTabSheet
+      Caption = 'FindInstrument'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnFindInstrument: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'FindInstrument'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnFindInstrumentClick
+      end
+      object txtFind: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 288
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 1
+      end
+    end
+    object TabSheet8: TTabSheet
+      Caption = 'GetOrders'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetOrders: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetOrders'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetOrdersClick
+      end
+      object txtGetOrders: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+    end
+    object TabSheet9: TTabSheet
+      Caption = 'GetOrderState'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetOrderState: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetOrderState'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetOrderStateClick
+      end
+      object txtGetOrderState1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+      object txtGetOrderState2: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'order_id'
+      end
+    end
+    object TabSheet14: TTabSheet
+      Caption = 'GetOrderPrice'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetOrderPrice: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetOrderPrice'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetOrderPriceClick
+      end
+      object txtGetOrderPrice1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+      object txtGetOrderPrice2: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'instrumentId'
+      end
+      object txtGetOrderPrice3: TEdit
+        Left = 168
+        Height = 23
+        Top = 72
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
+        TextHint = 'price'
+      end
+      object txtGetOrderPrice4: TEdit
+        Left = 168
+        Height = 23
+        Top = 104
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
+        TextHint = 'quantity'
+      end
+    end
+    object TabSheet10: TTabSheet
+      Caption = 'CancelOrder'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnCancelOrder: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'CancelOrder'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnCancelOrderClick
+      end
+      object txtCancelOrder1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+      object txtCancelOrder2: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'order_id'
+      end
+    end
+    object TabSheet11: TTabSheet
+      Caption = 'GetMaxLots'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetMaxLots: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetMaxLots'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetMaxLotsClick
+      end
+      object txtGetMaxLots1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+      object txtGetMaxLots2: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'instrumentId'
+      end
+      object txtGetMaxLots3: TEdit
+        Left = 168
+        Height = 23
+        Top = 72
+        Width = 138
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 3
+        TextHint = 'price'
+      end
+    end
+    object TabSheet12: TTabSheet
+      Caption = 'PostOrder'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnPostOrder: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'PostOrder'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnPostOrderClick
+      end
+      object txtPostOrder1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+      object txtPostOrder2: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 2
+        TextHint = 'instrumentId'
+      end
+      object txtPostOrder3: TEdit
+        Left = 168
+        Height = 23
+        Top = 72
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 3
+        TextHint = 'price'
+      end
+      object txtPostOrder4: TEdit
+        Left = 168
+        Height = 23
+        Top = 104
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
+        TextHint = 'quantity'
+      end
+      object cmbPostOrder1: TComboBox
+        Left = 488
+        Height = 23
+        Top = 8
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'ORDER_DIRECTION_UNSPECIFIED'
+          'ORDER_DIRECTION_BUY'
+          'ORDER_DIRECTION_SELL'
+        )
+        Style = csDropDownList
+        TabOrder = 5
+        Text = 'ORDER_DIRECTION_UNSPECIFIED'
+      end
+      object cmbPostOrder2: TComboBox
+        Left = 488
+        Height = 23
+        Top = 40
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'ORDER_TYPE_UNSPECIFIED'
+          'ORDER_TYPE_LIMIT'
+          'ORDER_TYPE_MARKET'
+          'ORDER_TYPE_BESTPRICE'
+        )
+        Style = csDropDownList
+        TabOrder = 6
+        Text = 'ORDER_TYPE_LIMIT'
+      end
+      object cmbPostOrder3: TComboBox
+        Left = 488
+        Height = 23
+        Top = 72
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'TIME_IN_FORCE_UNSPECIFIED'
+          'TIME_IN_FORCE_DAY'
+          'TIME_IN_FORCE_FILL_AND_KILL'
+          'TIME_IN_FORCE_FILL_OR_KILL'
+        )
+        Style = csDropDownList
+        TabOrder = 7
+        Text = 'TIME_IN_FORCE_DAY'
+      end
+      object txtPostOrder5: TEdit
+        Left = 488
+        Height = 23
+        Top = 104
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 8
+        TextHint = 'orderId UUID'
+        OnClick = txtPostOrder5Click
+      end
+    end
+    object TabSheet13: TTabSheet
+      Caption = 'GetOrderBook'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetOrderBook: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetOrderBook'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetOrderBookClick
+      end
+      object txtGetOrderBook2: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'instrumentId'
+      end
+      object txtGetOrderBook1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 2
+        TextHint = 'depth max 50'
+      end
+    end
+    object TabSheet15: TTabSheet
+      Caption = 'PostStopOrder'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnPostStopOrder: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'PostStopOrder'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnPostStopOrderClick
+      end
+      object txtPostStopOrder1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+      object txtPostStopOrder2: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'instrumentId'
+      end
+      object txtPostStopOrder3: TEdit
+        Left = 168
+        Height = 23
+        Top = 72
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
+        TextHint = 'price'
+      end
+      object txtPostStopOrder4: TEdit
+        Left = 168
+        Height = 23
+        Top = 136
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
+        TextHint = 'quantity'
+      end
+      object txtPostStopOrder5: TEdit
+        Left = 168
+        Height = 23
+        Top = 104
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 5
+        TextHint = 'stopPrice'
+      end
+      object txtPostStopOrder6: TEdit
+        Left = 480
+        Height = 23
+        Top = 8
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 6
+        TextHint = 'orderId UUID'
+        OnClick = txtPostStopOrder6Click
+      end
+      object cmbPostStopOrder1: TComboBox
+        Left = 480
+        Height = 23
+        Top = 40
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 2
+        Items.Strings = (
+          'STOP_ORDER_DIRECTION_UNSPECIFIED'
+          'STOP_ORDER_DIRECTION_BUY'
+          'STOP_ORDER_DIRECTION_SELL'
+        )
+        Style = csDropDownList
+        TabOrder = 7
+        Text = 'STOP_ORDER_DIRECTION_SELL'
+      end
+      object cmbPostStopOrder2: TComboBox
+        Left = 480
+        Height = 23
+        Top = 72
+        Width = 320
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'STOP_ORDER_EXPIRATION_TYPE_UNSPECIFIED'
+          'STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL'
+          'STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_DATE'
+        )
+        Style = csDropDownList
+        TabOrder = 8
+        Text = 'STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL'
+      end
+      object cmbPostStopOrder3: TComboBox
+        Left = 480
+        Height = 23
+        Top = 104
+        Width = 282
+        ItemHeight = 15
+        ItemIndex = 2
+        Items.Strings = (
+          'STOP_ORDER_TYPE_UNSPECIFIED'
+          'STOP_ORDER_TYPE_TAKE_PROFIT'
+          'STOP_ORDER_TYPE_STOP_LOSS'
+          'STOP_ORDER_TYPE_STOP_LIMIT'
+        )
+        Style = csDropDownList
+        TabOrder = 9
+        Text = 'STOP_ORDER_TYPE_STOP_LOSS'
+      end
+      object txtPostStopOrder7: TEdit
+        Left = 480
+        Height = 23
+        Top = 136
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 10
+        TextHint = 'expireDate UTC'
+      end
+      object cmbPostStopOrder4: TComboBox
+        Left = 816
+        Height = 23
+        Top = 8
+        Width = 250
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'EXCHANGE_ORDER_TYPE_UNSPECIFIED'
+          'EXCHANGE_ORDER_TYPE_MARKET'
+          'EXCHANGE_ORDER_TYPE_LIMIT'
+        )
+        Style = csDropDownList
+        TabOrder = 11
+        Text = 'EXCHANGE_ORDER_TYPE_MARKET'
+      end
+      object cmbPostStopOrder5: TComboBox
+        Left = 816
+        Height = 23
+        Top = 40
+        Width = 250
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'TAKE_PROFIT_TYPE_UNSPECIFIED'
+          'TAKE_PROFIT_TYPE_REGULAR'
+          'TAKE_PROFIT_TYPE_TRAILING'
+        )
+        Style = csDropDownList
+        TabOrder = 12
+        Text = 'TAKE_PROFIT_TYPE_UNSPECIFIED'
+      end
+      object cmbPostStopOrder6: TComboBox
+        Left = 816
+        Height = 23
+        Top = 72
+        Width = 250
+        ItemHeight = 15
+        ItemIndex = 2
+        Items.Strings = (
+          'PRICE_TYPE_UNSPECIFIED'
+          'PRICE_TYPE_POINT'
+          'PRICE_TYPE_CURRENCY'
+        )
+        Style = csDropDownList
+        TabOrder = 13
+        Text = 'PRICE_TYPE_CURRENCY'
+      end
+    end
+    object TabSheet16: TTabSheet
+      Caption = 'GetStopOrders'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetStopOrders: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetStopOrders'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetStopOrdersClick
+      end
+      object txtGetStopOrders1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+      object cmbGetStopOrders: TComboBox
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'STOP_ORDER_STATUS_UNSPECIFIED'
+          'STOP_ORDER_STATUS_ALL'
+          'STOP_ORDER_STATUS_ACTIVE'
+          'STOP_ORDER_STATUS_EXECUTED'
+          'STOP_ORDER_STATUS_CANCELED'
+          'STOP_ORDER_STATUS_EXPIRED'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'STOP_ORDER_STATUS_ALL'
+      end
+      object txtGetStopOrders2: TEdit
+        Left = 168
+        Height = 23
+        Top = 72
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
+        TextHint = 'from UTC'
+      end
+      object txtGetStopOrders3: TEdit
+        Left = 168
+        Height = 23
+        Top = 100
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
+        TextHint = 'to UTC'
+      end
+      object Button3: TButton
+        Left = 401
+        Height = 23
+        Top = 100
+        Width = 49
+        Caption = 'NOW'
+        TabOrder = 5
+        OnClick = Button3Click
+      end
+    end
+    object TabSheet17: TTabSheet
+      Caption = 'CancelStopOrder'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnCancelStopOrder: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'CancelStopOrder'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnCancelStopOrderClick
+      end
+      object txtCancelStopOrder1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'account_id'
+      end
+      object txtCancelStopOrder2: TEdit
+        Left = 168
+        Height = 23
+        Top = 36
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'stopOrderId'
+      end
+    end
+    object TabSheet18: TTabSheet
+      Caption = 'GetCandles'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetCandles: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetCandles'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetCandlesClick
+      end
+      object txtGetCandles1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'from UTC'
+      end
+      object txtGetCandles2: TEdit
+        Left = 168
+        Height = 23
+        Top = 36
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'to UTC'
+      end
+      object cmbGetCandles1: TComboBox
+        Left = 168
+        Height = 23
+        Top = 64
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 2
+        Items.Strings = (
+          'CANDLE_INTERVAL_UNSPECIFIED'
+          'CANDLE_INTERVAL_1_MIN'
+          'CANDLE_INTERVAL_5_MIN'
+          'CANDLE_INTERVAL_15_MIN'
+          'CANDLE_INTERVAL_HOUR'
+          'CANDLE_INTERVAL_DAY'
+          'CANDLE_INTERVAL_2_MIN'
+          'CANDLE_INTERVAL_3_MIN'
+          'CANDLE_INTERVAL_10_MIN'
+          'CANDLE_INTERVAL_30_MIN'
+          'CANDLE_INTERVAL_2_HOUR'
+          'CANDLE_INTERVAL_4_HOUR'
+          'CANDLE_INTERVAL_WEEK'
+          'CANDLE_INTERVAL_MONTH'
+        )
+        Style = csDropDownList
+        TabOrder = 3
+        Text = 'CANDLE_INTERVAL_5_MIN'
+      end
+      object txtGetCandles3: TEdit
+        Left = 168
+        Height = 23
+        Top = 96
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 4
+        TextHint = 'instrumentId'
+      end
+      object cmbGetCandles2: TComboBox
+        Left = 168
+        Height = 23
+        Top = 128
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'CANDLE_SOURCE_UNSPECIFIED'
+          'CANDLE_SOURCE_EXCHANGE'
+          'CANDLE_SOURCE_INCLUDE_WEEKEND'
+        )
+        Style = csDropDownList
+        TabOrder = 5
+        Text = 'CANDLE_SOURCE_UNSPECIFIED'
+      end
+      object txtGetCandles4: TEdit
+        Left = 480
+        Height = 23
+        Top = 8
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 6
+        TextHint = 'limit'
+      end
+      object Button2: TButton
+        Left = 401
+        Height = 23
+        Top = 36
+        Width = 49
+        Caption = 'NOW'
+        TabOrder = 7
+        OnClick = Button2Click
+      end
+    end
+    object TabSheet28: TTabSheet
+      Caption = 'GetAssets'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetAssets: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetAssets'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetAssetsClick
+      end
+      object cmbGetAssets1: TComboBox
+        Left = 200
+        Height = 23
+        Top = 8
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'INSTRUMENT_STATUS_UNSPECIFIED'
+          'INSTRUMENT_STATUS_BASE'
+          'INSTRUMENT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'INSTRUMENT_STATUS_BASE'
+      end
+      object cmbGetAssets2: TComboBox
+        Left = 200
+        Height = 23
+        Top = 48
+        Width = 406
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'INSTRUMENT_TYPE_UNSPECIFIED'
+          'INSTRUMENT_TYPE_BOND'
+          'INSTRUMENT_TYPE_SHARE'
+          'INSTRUMENT_TYPE_CURRENCY'
+          'INSTRUMENT_TYPE_ETF'
+          'INSTRUMENT_TYPE_FUTURES'
+          'INSTRUMENT_TYPE_SP'
+          'INSTRUMENT_TYPE_OPTION'
+          'INSTRUMENT_TYPE_CLEARING_CERTIFICATE'
+          'INSTRUMENT_TYPE_INDEX'
+          'INSTRUMENT_TYPE_COMMODITY'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'INSTRUMENT_TYPE_UNSPECIFIED'
+      end
+    end
+    object TabSheet19: TTabSheet
+      Caption = 'GetTechAnalysis'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetTechAnalysis: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetTechAnalysis'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetTechAnalysisClick
+      end
+      object cmbGetTechAnalysis1: TComboBox
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 3
+        Items.Strings = (
+          'INDICATOR_TYPE_UNSPECIFIED'
+          'INDICATOR_TYPE_BB'
+          'INDICATOR_TYPE_EMA'
+          'INDICATOR_TYPE_RSI'
+          'INDICATOR_TYPE_MACD'
+          'INDICATOR_TYPE_SMA'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'INDICATOR_TYPE_RSI'
+      end
+      object txtGetTechAnalysis1: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'instrumentId'
+      end
+      object txtGetTechAnalysis2: TEdit
+        Left = 168
+        Height = 23
+        Top = 72
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
+        TextHint = 'from UTC'
+      end
+      object txtGetTechAnalysis3: TEdit
+        Left = 168
+        Height = 23
+        Top = 104
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
+        TextHint = 'to UTC'
+      end
+      object cmbGetTechAnalysis2: TComboBox
+        Left = 168
+        Height = 23
+        Top = 136
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 2
+        Items.Strings = (
+          'INDICATOR_INTERVAL_UNSPECIFIED'
+          'INDICATOR_INTERVAL_ONE_MINUTE'
+          'INDICATOR_INTERVAL_FIVE_MINUTES'
+          'INDICATOR_INTERVAL_FIFTEEN_MINUTES'
+          'INDICATOR_INTERVAL_ONE_HOUR'
+          'INDICATOR_INTERVAL_ONE_DAY'
+          'INDICATOR_INTERVAL_2_MIN'
+          'INDICATOR_INTERVAL_3_MIN'
+          'INDICATOR_INTERVAL_10_MIN'
+          'INDICATOR_INTERVAL_30_MIN'
+          'INDICATOR_INTERVAL_2_HOUR'
+          'INDICATOR_INTERVAL_4_HOUR'
+          'INDICATOR_INTERVAL_WEEK'
+          'INDICATOR_INTERVAL_MONTH'
+        )
+        Style = csDropDownList
+        TabOrder = 5
+        Text = 'INDICATOR_INTERVAL_FIVE_MINUTES'
+      end
+      object cmbGetTechAnalysis3: TComboBox
+        Left = 496
+        Height = 23
+        Top = 8
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'TYPE_OF_PRICE_UNSPECIFIED'
+          'TYPE_OF_PRICE_CLOSE'
+          'TYPE_OF_PRICE_OPEN'
+          'TYPE_OF_PRICE_HIGH'
+          'TYPE_OF_PRICE_LOW'
+          'TYPE_OF_PRICE_AVG'
+        )
+        Style = csDropDownList
+        TabOrder = 6
+        Text = 'TYPE_OF_PRICE_CLOSE'
+      end
+      object txtGetTechAnalysis4: TEdit
+        Left = 496
+        Height = 23
+        Top = 40
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 7
+        TextHint = 'length'
+      end
+      object txtGetTechAnalysis5: TEdit
+        Left = 496
+        Height = 23
+        Top = 72
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 8
+        TextHint = 'deviationMultiplier'
+      end
+      object txtGetTechAnalysis6: TEdit
+        Left = 672
+        Height = 23
+        Top = 40
+        Width = 80
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 9
+        TextHint = 'fastLength'
+      end
+      object txtGetTechAnalysis7: TEdit
+        Left = 768
+        Height = 23
+        Top = 40
+        Width = 80
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 10
+        TextHint = 'slowLength'
+      end
+      object txtGetTechAnalysis8: TEdit
+        Left = 864
+        Height = 23
+        Top = 40
+        Width = 80
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 11
+        TextHint = 'signalSmoothing'
+      end
+      object Button1: TButton
+        Left = 399
+        Height = 23
+        Top = 104
+        Width = 49
+        Caption = 'NOW'
+        TabOrder = 12
+        OnClick = Button1Click
+      end
+    end
+    object TabSheet20: TTabSheet
+      Caption = 'Indicators'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetIndicators: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetIndicators'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetIndicatorsClick
+      end
+      object cmbGetIndicators: TComboBox
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 280
+        ItemHeight = 15
+        ItemIndex = 3
+        Items.Strings = (
+          'INDICATOR_EMA'
+          'INDICATOR_RSI'
+          'INDICATOR_ATR'
+          'INDICATOR_MACD'
+          'INDICATOR_HEIKEN_ASHI'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'INDICATOR_MACD'
+      end
+    end
+    object TabSheet21: TTabSheet
+      Caption = 'GetTradingStatus'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetTradingStatus: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetTradingStatus'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetTradingStatusClick
+      end
+      object txtGetTradingStatus: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'instrumentId'
+      end
+    end
+    object TabSheet23: TTabSheet
+      Caption = 'GetInstrumentBy'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetInstrumentBy: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetInstrumentBy'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetInstrumentByClick
+      end
+      object txtGetInstrumentBy: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 272
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'instrumentId'
+      end
+    end
+    object TabSheet24: TTabSheet
+      Caption = 'GetClosePrices'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetClosePrices: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetClosePrices'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetClosePricesClick
+      end
+      object memGetClosePrices: TMemo
+        Left = 320
+        Height = 145
+        Top = 9
+        Width = 496
+        Color = clYellow
+        Font.Name = 'Courier New'
+        Lines.Strings = (
+          'e6123145-9665-43e0-8413-cd61b8aa9b13'
+          'c190ff1f-1447-4227-b543-316332699ca5'
+          '51dc6277-6409-4cde-a1af-9c3b3b15f6f8'
+          '483e017a-820f-4e6a-8b82-67fc736588e7'
+          '92b9e913-d7df-4164-bd83-1013c819bf44'
+        )
+        ParentFont = False
+        ScrollBars = ssVertical
+        TabOrder = 1
+        WordWrap = False
+      end
+      object cmbGetClosePrices: TComboBox
+        Left = 9
+        Height = 23
+        Top = 96
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'INSTRUMENT_STATUS_UNSPECIFIED'
+          'INSTRUMENT_STATUS_BASE'
+          'INSTRUMENT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'INSTRUMENT_STATUS_BASE'
+      end
+    end
+    object TabSheet25: TTabSheet
+      Caption = 'GetLastPrices'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetLastPrices: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetLastPrices'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetLastPricesClick
+      end
+      object memGetLastPrices: TMemo
+        Left = 320
+        Height = 145
+        Top = 9
+        Width = 496
+        Color = clYellow
+        Font.Name = 'Courier New'
+        Lines.Strings = (
+          'e6123145-9665-43e0-8413-cd61b8aa9b13'
+          'c190ff1f-1447-4227-b543-316332699ca5'
+          '51dc6277-6409-4cde-a1af-9c3b3b15f6f8'
+          '483e017a-820f-4e6a-8b82-67fc736588e7'
+          '92b9e913-d7df-4164-bd83-1013c819bf44'
+        )
+        ParentFont = False
+        ScrollBars = ssVertical
+        TabOrder = 1
+        WordWrap = False
+      end
+      object cmbGetLastPrices1: TComboBox
+        Left = 9
+        Height = 23
+        Top = 48
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'LAST_PRICE_UNSPECIFIED'
+          'LAST_PRICE_EXCHANGE'
+          'LAST_PRICE_DEALER'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'LAST_PRICE_EXCHANGE'
+      end
+      object cmbGetLastPrices2: TComboBox
+        Left = 9
+        Height = 23
+        Top = 96
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'INSTRUMENT_STATUS_UNSPECIFIED'
+          'INSTRUMENT_STATUS_BASE'
+          'INSTRUMENT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 3
+        Text = 'INSTRUMENT_STATUS_BASE'
+      end
+    end
+    object TabSheet22: TTabSheet
+      Caption = 'GetOperationsByCursor'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetOperationsByCursor: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetOperationsByCursor'
+        DoubleBuffered = True
+        Font.Style = [fsBold]
+        ParentDoubleBuffered = False
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetOperationsByCursorClick
+      end
+      object txtGetOperationsByCursor3: TEdit
+        Left = 168
+        Height = 23
+        Top = 72
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'from UTC'
+      end
+      object txtGetOperationsByCursor4: TEdit
+        Left = 168
+        Height = 23
+        Top = 104
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 2
+        TextHint = 'to UTC'
+      end
+      object txtGetOperationsByCursor2: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 3
+        TextHint = 'instrumentId'
+      end
+      object txtGetOperationsByCursor1: TEdit
+        Left = 168
+        Height = 23
+        Top = 8
+        Width = 137
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        TabOrder = 4
+        TextHint = 'account_id'
+      end
+      object memGetOperationsByCursor1: TMemo
+        Left = 568
+        Height = 145
+        Top = 8
+        Width = 496
+        Color = clYellow
+        Font.Name = 'Courier New'
+        Lines.Strings = (
+          'OPERATION_TYPE_COUPON'
+          'OPERATION_TYPE_BUY'
+        )
+        ParentFont = False
+        ScrollBars = ssVertical
+        TabOrder = 5
+        WordWrap = False
+      end
+    end
+    object TabSheet26: TTabSheet
+      Caption = 'GetLastTrades'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetLastTrades: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetLastTrades'
+        DoubleBuffered = True
+        Font.Style = [fsBold]
+        ParentDoubleBuffered = False
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetLastTradesClick
+      end
+      object txtGetLastTrades1: TEdit
+        Left = 168
+        Height = 23
+        Top = 40
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 1
+        TextHint = 'instrumentId'
+      end
+      object txtGetLastTrades2: TEdit
+        Left = 168
+        Height = 23
+        Top = 72
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'from UTC'
+      end
+      object txtGetLastTrades3: TEdit
+        Left = 168
+        Height = 23
+        Top = 104
+        Width = 224
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
+        TextHint = 'to UTC'
+      end
+    end
+    object TabSheet27: TTabSheet
+      Caption = 'GetAssetFundamentals'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object memGetAssetFundamentals: TMemo
+        Left = 320
+        Height = 145
+        Top = 9
+        Width = 496
+        Color = clYellow
+        Font.Name = 'Courier New'
+        Lines.Strings = (
+          'b6a73950-20a8-46c7-8b49-9dfbc14fe0ba'
+          '71c4e99b-db73-42ec-9f22-3da1c945c7a2'
+          '3effad63-cbc1-404b-bc81-18f1b5ff407e'
+        )
+        ParentFont = False
+        ScrollBars = ssVertical
+        TabOrder = 0
+        WordWrap = False
+      end
+      object btnGetAssetFundamentals: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetAssetFundamentals'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 1
+        OnClick = btnGetAssetFundamentalsClick
+      end
+    end
+    object TabSteet29: TTabSheet
+      Caption = 'GetBrands'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetBrands: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'GetBrands'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetBrandsClick
+      end
+      object Label1: TLabel
+        Left = 184
+        Height = 15
+        Top = 13
+        Width = 27
+        Caption = 'limit:'
+      end
+      object edtGetBrands1: TEdit
+        Left = 280
+        Height = 23
+        Top = 13
+        Width = 68
+        TabOrder = 1
+        Text = '100'
+      end
+      object Label3: TLabel
+        Left = 184
+        Height = 15
+        Top = 48
+        Width = 74
+        Caption = 'page number:'
+      end
+      object edtGetBrands2: TEdit
+        Left = 280
+        Height = 23
+        Top = 48
+        Width = 68
+        TabOrder = 2
+        Text = '0'
+      end
+    end
+    object TabSheet29: TTabSheet
+      Caption = 'GetTradingStatuses'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnGetTradingStatuses: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 137
+        Caption = 'GetTradingStatuses'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnGetTradingStatusesClick
+      end
+      object memGetTradingStatuses: TMemo
+        Left = 320
+        Height = 145
+        Top = 0
+        Width = 496
+        Color = clYellow
+        Font.Name = 'Courier New'
+        Lines.Strings = (
+          'fef2c377-1bc4-4882-8d18-0541f30dea8d'
+          'fdd27ece-8e55-46c5-bf22-9d0183265f6d'
+        )
+        ParentFont = False
+        ScrollBars = ssVertical
+        TabOrder = 1
+        WordWrap = False
+      end
+    end
+    object TabSheet30: TTabSheet
+      Caption = 'StructuredNotes'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnStructuredNotes: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 138
+        Caption = 'StructuredNotes'
+        Font.Style = [fsBold]
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnStructuredNotesClick
+      end
+      object cmbStructuredNotes1: TComboBox
+        Left = 200
+        Height = 23
+        Top = 8
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 2
+        Items.Strings = (
+          'INSTRUMENT_STATUS_UNSPECIFIED'
+          'INSTRUMENT_STATUS_BASE'
+          'INSTRUMENT_STATUS_ALL'
+        )
+        Style = csDropDownList
+        TabOrder = 1
+        Text = 'INSTRUMENT_STATUS_ALL'
+      end
+      object cmbStructuredNotes2: TComboBox
+        Left = 200
+        Height = 23
+        Top = 48
+        Width = 294
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+          'INSTRUMENT_EXCHANGE_DEALER'
+        )
+        Style = csDropDownList
+        TabOrder = 2
+        Text = 'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+      end
+    end
+  end
+end
