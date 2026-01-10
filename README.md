@@ -1,7 +1,6 @@
 # T-Invest API FPC (Free Pascal) SDK
 
 ![pascal](https://img.shields.io/badge/TinvestSDK-100%25-green?label=pascal)
-![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/gitgetgotgat/TinvestSDK/latest/total)
 
 Данный проект представляет собой инструментарий на языке Free Pascal (FPC) для работы с REST-интерфейсом торговой
 платформы [Т Инвестиции](https://www.tinkoff.ru/invest/).
@@ -62,6 +61,7 @@ begin
 ## Пример работы с SDK 
 
 В каталоге [example](/example/) находится пример для работы с SDK в среде Lazarus.
+
 
 
 
