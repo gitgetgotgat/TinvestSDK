@@ -1,7 +1,7 @@
 # Пример работы с SDK
 
-![pascal](https://img.shields.io/badge/test-100%25-green?label=pascal)
-![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/gitgetgotgat/test/latest/total)
+![pascal](https://img.shields.io/badge/TinvestSDK-100%25-green?label=pascal)
+![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/gitgetgotgat/TinvestSDK/latest/total)
 
 В примере реализованы некоторые методы. На скриншоте показан результат запроса свечек для Т-Технологии. 
 
