@@ -5393,7 +5393,6 @@ begin
             SetLength(gcp_output.gcp_closePrices, numb_uids+1);
 
             while i <= numb_uids do  begin
-               if JSN.FindPath('closePrices[' + inttostr(i) + '].figi') <> nil then
                if JSN.FindPath('closePrices[' + inttostr(i) + '].instrumentUid') <> nil then
                   gcp_output.gcp_closePrices[i].gcp_instrumentUid := JSN.FindPath('closePrices[' + inttostr(i) + '].instrumentUid').AsString;
                if JSN.FindPath('closePrices[' + inttostr(i) + '].price.units') <> nil then
@@ -5490,7 +5489,6 @@ begin
             SetLength(glp_output.glp_lastPrices, numb_uids+1);
 
             while i <= numb_uids do  begin
-               if JSN.FindPath('lastPrices[' + inttostr(i) + '].figi') <> nil then
                if JSN.FindPath('lastPrices[' + inttostr(i) + '].instrumentUid') <> nil then
                   glp_output.glp_lastPrices[i].glp_instrumentUid := JSN.FindPath('lastPrices[' + inttostr(i) + '].instrumentUid').AsString;
                if JSN.FindPath('lastPrices[' + inttostr(i) + '].price.units') <> nil then
