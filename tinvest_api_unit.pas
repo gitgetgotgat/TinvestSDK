@@ -5,10 +5,7 @@ unit tinvest_api_unit;
 interface
 
 uses
-  Classes, SysUtils, fphttpClient, openssl, opensslsockets, jsonparser, Fpjson, DateUtils, Dialogs;
-
-const
-   url_tinvest = 'https://invest-public-api.tbank.ru/rest/tinkoff.public.invest.api.contract.v1.';
+  Classes, SysUtils, fphttpClient, openssl, opensslsockets, jsonparser, Fpjson, DateUtils;
 
 type
 
@@ -22,6 +19,7 @@ type
    end;
 
    UnaryLimitation = record
+      SandboxService_limit : http_headers;
       InstrumentsService_limit : http_headers;
       MarketDataService_limit : http_headers;
       OperationsService_limit : http_headers;
@@ -42,13 +40,14 @@ type
    // Структуры для процедуры GetAccounts
    ga_request = record                                                                                          // Запрос для GetAccounts
       ga_token : string;                                                                                        // Токен
-      ga_status : string;                                                                                       // Статус счета [ACCOUNT_STATUS_UNSPECIFIED, ACCOUNT_STATUS_NEW, ACCOUNT_STATUS_OPEN, ACCOUNT_STATUS_CLOSED, ACCOUNT_STATUS_ALL]
+      ga_status : string;                                                                                       // Статус счета [ACCOUNT_STATUS_NEW, ACCOUNT_STATUS_OPEN, ACCOUNT_STATUS_CLOSED, ACCOUNT_STATUS_ALL]
+      ga_is_sandbox_flag : boolean;                                                                             // флаг работы в контуре песочницы
    end;
    ga_accountsStruct = record
       ga_id : string;                                                                                           // Идентификатор счета
       ga_type : string;                                                                                         // Тип счета
       ga_name : string;                                                                                         // Название счета
-      ga_status : string;                                                                                       // Статус счета [ACCOUNT_STATUS_UNSPECIFIED, ACCOUNT_STATUS_NEW, ACCOUNT_STATUS_OPEN, ACCOUNT_STATUS_CLOSED, ACCOUNT_STATUS_ALL]
+      ga_status : string;                                                                                       // Статус счета [ACCOUNT_STATUS_NEW, ACCOUNT_STATUS_OPEN, ACCOUNT_STATUS_CLOSED, ACCOUNT_STATUS_ALL]
       ga_openedDate : string;                                                                                   // Дата открытия счета в часовом поясе UTC
       ga_closedDate : string;                                                                                   // Дата закрытия счета в часовом поясе UTC
       ga_accessLevel : string;                                                                                  // Уровень доступа к текущему счету (определяется токеном)
@@ -58,6 +57,7 @@ type
       ga_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       ga_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       ga_error_description : int64;                                                                             // Код ошибки
+      ga_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetPortfolio
@@ -65,9 +65,9 @@ type
       gp_token : string;                                                                                        // Токен
       gp_accountId : string;                                                                                    // Идентификатор счета пользователя
       gp_currency : string;                                                                                     // Валюта, в которой нужно рассчитать портфель
+      gp_is_sandbox_flag : boolean;                                                                             // флаг работы в контуре песочницы
    end;
    gp_portfoliopositionStruct = record
-      gp_figi : string;                                                                                         // FIGI-идентификатор инструмента
       gp_instrumentType : string;                                                                               // Тип инструмента
       gp_quantity : int64;                                                                                      // Количество инструмента в портфеле в штуках
       gp_averagePositionPrice : MoneyStruct;                                                                    // Средневзвешенная цена позиции. Для пересчета возможна задержка до одной секунды
@@ -88,7 +88,6 @@ type
    gp_virtualportfoliopositionStruct = record
       gp_positionUid : string;                                                                                  // Уникальный идентификатор позиции
       gp_instrumentUid : string;                                                                                // Уникальный идентификатор инструмента
-      gp_figi : string;                                                                                         // FIGI-идентификатор инструмента
       gp_instrumentType : string;                                                                               // Тип инструмента
       gp_quantity : int64;                                                                                      // Количество инструмента в портфеле в штуках
       gp_averagePositionPrice : double;                                                                         // Средневзвешенная цена позиции. Для пересчета возможна задержка до одной секунды
@@ -117,6 +116,7 @@ type
       gp_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       gp_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       gp_error_description : int64;                                                                             // Код ошибки
+      gp_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetOperationsByCursor
@@ -126,7 +126,7 @@ type
    gobc_request = record                                                                                        // Запрос для GetOperationsByCursor
       gobc_token : string;                                                                                      // Токен
       gobc_accountId : string;                                                                                  // Идентификатор счета клиента
-      gobc_instrumentId : string;                                                                               // Идентификатор инструмента — FIGI или UID инструмента
+      gobc_instrumentId : string;                                                                               // Идентификатор инструмента — UID инструмента
       gobc_from : string;                                                                                       // Начало периода по UTC
       gobc_to : string;                                                                                         // Окончание периода по UTC
       gobc_cursor : string;                                                                                     // Идентификатор элемента, с которого начать формировать ответ (для первого запроса "пусто", а далее в каждом запросе передеавать из nextCursor
@@ -136,7 +136,7 @@ type
       gobc_withoutCommissions : boolean;                                                                        // Флаг возврата комиссии. По умолчанию — false
       gobc_withoutTrades : boolean;                                                                             // Флаг получения ответа без массива сделок
       gobc_withoutOvernights : boolean;                                                                         // Флаг показа overnight операций
-
+      gobc_is_sandbox_flag : boolean;                                                                           // флаг работы в контуре песочницы
    end;
    gobc_tradesStruct = record
       gobc_num : string;                                                                                        // Номер сделки
@@ -162,7 +162,6 @@ type
       gobc_description : string;                                                                                // Описание операции
       gobc_state : string;                                                                                      // Статус запрашиваемых операций
       gobc_instrumentUid : string;                                                                              // Уникальный идентификатор инструмента
-      gobc_figi : string;                                                                                       // FIGI
       gobc_instrumentType : string;                                                                             // Тип инструмента
       gobc_instrumentKind : string;                                                                             // Тип инструмента
       gobc_positionUid : string;                                                                                // Уникальный идентификатор позиции
@@ -191,6 +190,7 @@ type
       gobc_error_code : int64;                                                                                  // Уникальный идентификатор ошибки
       gobc_error_message : string;                                                                              // Пользовательское сообщение об ошибке
       gobc_error_description : int64;                                                                           // Код ошибки
+      gobc_x_tracking_id : string;                                                                              // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры PostOrder
@@ -198,14 +198,15 @@ type
       po_token : string;                                                                                        // Токен
       po_quantity : int64;                                                                                      // Количество лотов
       po_price : double;                                                                                        // Цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента. Игнорируется для рыночных поручений
-      po_direction : string;                                                                                    // Направление операции [ORDER_DIRECTION_UNSPECIFIED, ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
+      po_direction : string;                                                                                    // Направление операции [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       po_accountId : string;                                                                                    // Номер счета
-      po_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_UNSPECIFIED, ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
+      po_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
       po_orderId : string;                                                                                      // Идентификатор запроса выставления поручения для целей идемпотентности в формате UID. Максимальная длина 36 символов
-      po_instrumentId : string;                                                                                 // Идентификатор инструмента, принимает значения Figi или Instrument_uid
-      po_timeInForce : string;                                                                                  // Алгоритм исполнения поручения, применяется только к лимитной заявке [TIME_IN_FORCE_UNSPECIFIED, TIME_IN_FORCE_DAY, TIME_IN_FORCE_FILL_AND_KILL, TIME_IN_FORCE_FILL_OR_KILL]
-      po_priceType : string;                                                                                    // Тип цены [PRICE_TYPE_UNSPECIFIED, PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
+      po_instrumentId : string;                                                                                 // Идентификатор инструмента, принимает значения Instrument_uid
+      po_timeInForce : string;                                                                                  // Алгоритм исполнения поручения, применяется только к лимитной заявке [TIME_IN_FORCE_DAY, TIME_IN_FORCE_FILL_AND_KILL, TIME_IN_FORCE_FILL_OR_KILL]
+      po_priceType : string;                                                                                    // Тип цены [PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
       po_confirmMarginTrade : boolean;                                                                          // Согласие на выставление заявки, которая может привести к непокрытой позиции, по умолчанию false
+      po_is_sandbox_flag : boolean;                                                                             // флаг работы в контуре песочницы
    end;
    po_responseMetadataStruct = record
       po_trackingId : string;                                                                                   // Идентификатор трекинга
@@ -213,7 +214,7 @@ type
    end;
    po_response = record                                                                                         // Ответ для PostOrder
       po_orderId : string;                                                                                      // Биржевой идентификатор заявки
-      po_executionReportStatus : string;                                                                        // Текущий статус заявки [EXECUTION_REPORT_STATUS_UNSPECIFIED, EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
+      po_executionReportStatus : string;                                                                        // Текущий статус заявки [EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
       po_lotsRequested : int64;                                                                                 // Запрошено лотов
       po_lotsExecuted : int64;                                                                                  // Исполнено лотов
       po_initialOrderPrice : MoneyStruct;                                                                       // Начальная цена заявки. Произведение количества запрошенных лотов на цену
@@ -222,10 +223,9 @@ type
       po_initialCommission : MoneyStruct;                                                                       // Начальная комиссия. Комиссия рассчитанная при выставлении заявки
       po_executedCommission : MoneyStruct;                                                                      // Фактическая комиссия по итогам исполнения заявки
       po_aciValue : MoneyStruct;                                                                                // Значение НКД (накопленного купонного дохода) на дату
-      po_figi : string;                                                                                         // Figi-идентификатор инструмента
-      po_direction : string;                                                                                    // Направление сделки [ORDER_DIRECTION_UNSPECIFIED, ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
+      po_direction : string;                                                                                    // Направление сделки [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       po_initialSecurityPrice : MoneyStruct;                                                                    // Начальная цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента
-      po_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_UNSPECIFIED, ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
+      po_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
       po_message : string;                                                                                      // Дополнительные данные об исполнении заявки
       po_initialOrderPricePt : double;                                                                          // Начальная цена заявки в пунктах (для фьючерсов)
       po_instrumentUid : string;                                                                                // UID идентификатор инструмента
@@ -234,6 +234,7 @@ type
       po_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       po_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       po_error_description : int64;                                                                             // Код ошибки
+      po_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры ReplaceOrder
@@ -244,8 +245,9 @@ type
       ro_idempotencyKey : string;                                                                               // Новый идентификатор запроса выставления поручения для целей идемпотентности. Максимальная длина 36 символов. Перезатирает старый ключ
       ro_quantity : int64;                                                                                      // Количество лотов
       ro_price : double;                                                                                        // Цена за 1 инструмент
-      ro_priceType : string;                                                                                    // Тип цены [PRICE_TYPE_UNSPECIFIED, PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
+      ro_priceType : string;                                                                                    // Тип цены [PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
       ro_confirmMarginTrade : boolean;                                                                          // Согласие на выставление заявки, которая может привести к непокрытой позиции, по умолчанию false
+      ro_is_sandbox_flag : boolean;                                                                             // флаг работы в контуре песочницы
    end;
    ro_responseMetadataStruct = record
       ro_trackingId : string;                                                                                   // Идентификатор трекинга
@@ -253,7 +255,7 @@ type
    end;
    ro_response = record                                                                                         // Ответ для ReplaceOrder
       ro_orderId : string;                                                                                      // Биржевой идентификатор заявки
-      ro_executionReportStatus : string;                                                                        // Текущий статус заявки [EXECUTION_REPORT_STATUS_UNSPECIFIED, EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
+      ro_executionReportStatus : string;                                                                        // Текущий статус заявки [EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
       ro_lotsRequested : int64;                                                                                 // Запрошено лотов
       ro_lotsExecuted : int64;                                                                                  // Исполнено лотов
       ro_initialOrderPrice : MoneyStruct;                                                                       // Начальная цена заявки. Произведение количества запрошенных лотов на цену
@@ -262,10 +264,9 @@ type
       ro_initialCommission : MoneyStruct;                                                                       // Начальная комиссия. Комиссия рассчитанная при выставлении заявки
       ro_executedCommission : MoneyStruct;                                                                      // Фактическая комиссия по итогам исполнения заявки
       ro_aciValue : MoneyStruct;                                                                                // Значение НКД (накопленного купонного дохода) на дату
-      ro_figi : string;                                                                                         // Figi-идентификатор инструмента
-      ro_direction : string;                                                                                    // Направление операции [ORDER_DIRECTION_UNSPECIFIED, ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
+      ro_direction : string;                                                                                    // Направление операции [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       ro_initialSecurityPrice : MoneyStruct;                                                                    // Начальная цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента
-      ro_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_UNSPECIFIED, ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
+      ro_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
       ro_message : string;                                                                                      // Дополнительные данные об исполнении заявки
       ro_initialOrderPricePt : double;                                                                          // Начальная цена заявки в пунктах (для фьючерсов)
       ro_instrumentUid : string;                                                                                // UID идентификатор инструмента
@@ -274,6 +275,7 @@ type
       ro_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       ro_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       ro_error_description : int64;                                                                             // Код ошибки
+      ro_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры CancelOrder
@@ -281,7 +283,8 @@ type
       co_token : string;                                                                                        // Токен
       co_accountId : string;                                                                                    // Номер счета
       co_orderId : string;                                                                                      // Идентификатор заявки
-      co_orderIdType : string;                                                                                  // Тип идентификатора заявки [ORDER_ID_TYPE_UNSPECIFIED, ORDER_ID_TYPE_EXCHANGE, ORDER_ID_TYPE_REQUEST]
+      co_orderIdType : string;                                                                                  // Тип идентификатора заявки [ORDER_ID_TYPE_EXCHANGE, ORDER_ID_TYPE_REQUEST]
+      co_is_sandbox_flag : boolean;                                                                             // флаг работы в контуре песочницы
    end;
    co_responseMetadataStruct = record
       po_trackingId : string;                                                                                   // Идентификатор трекинга
@@ -293,14 +296,16 @@ type
       co_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       co_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       co_error_description : int64;                                                                             // Код ошибки
+      co_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetMaxLots
    gml_request = record                                                                                         // Запрос для GetMaxLots
       gml_token : string;                                                                                       // Токен
       gml_accountId : string;                                                                                   // Номер счета
-      gml_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения Figi или instrument_uid
+      gml_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения instrument_uid
       gml_price : double;                                                                                       // Цена инструмента. Если не указывать цену инструмента, то расчет произведется по текущум ценам в стакане: по лучшему предложению для покупки и по лучшему спросу для продажи
+      gml_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
    gml_buyLimitsStruct = record
       gml_buyMoneyAmount : double;                                                                              // Количество доступной валюты для покупки
@@ -327,6 +332,7 @@ type
       gml_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gml_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gml_error_description : int64;                                                                            // Код ошибки
+      gml_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetOrderState
@@ -334,8 +340,9 @@ type
       gos_token : string;                                                                                       // Токен
       gos_accountId : string;                                                                                   // Номер счета
       gos_orderId : string;                                                                                     // Идентификатор заявки
-      gos_priceType : string;                                                                                   // Тип цены [PRICE_TYPE_UNSPECIFIED, PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
-      gos_orderIdType : string;                                                                                 // Тип идентификатора заявки [ORDER_ID_TYPE_UNSPECIFIED, ORDER_ID_TYPE_EXCHANGE, ORDER_ID_TYPE_REQUEST]
+      gos_priceType : string;                                                                                   // Тип цены [PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
+      gos_orderIdType : string;                                                                                 // Тип идентификатора заявки [ORDER_ID_TYPE_EXCHANGE, ORDER_ID_TYPE_REQUEST]
+      gos_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
    gos_stagesStruct = record
       gos_price : double;                                                                                       // Цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента
@@ -345,7 +352,7 @@ type
    end;
    gos_response = record                                                                                        // Ответ для GetOrderState
       gos_orderId : string;                                                                                     // Биржевой идентификатор заявки
-      gos_executionReportStatus : string;                                                                       // Текущий статус заявки [EXECUTION_REPORT_STATUS_UNSPECIFIED, EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
+      gos_executionReportStatus : string;                                                                       // Текущий статус заявки [EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
       gos_lotsRequested : int64;                                                                                // Запрошено лотов
       gos_lotsExecuted : int64;                                                                                 // Исполнено лотов
       gos_initialOrderPrice : MoneyStruct;                                                                      // Начальная цена заявки. Произведение количества запрошенных лотов на цену
@@ -354,25 +361,26 @@ type
       gos_averagePositionPrice : MoneyStruct;                                                                   // Средняя цена позиции по сделке
       gos_initialCommission : MoneyStruct;                                                                      // Начальная комиссия. Комиссия, рассчитанная на момент подачи заявки
       gos_executedCommission : MoneyStruct;                                                                     // Фактическая комиссия по итогам исполнения заявки
-      gos_figi : string;                                                                                        // Figi-идентификатор инструмента
-      gos_direction : string;                                                                                   // Направление заявки [ORDER_DIRECTION_UNSPECIFIED, ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
+      gos_direction : string;                                                                                   // Направление заявки [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       gos_initialSecurityPrice : MoneyStruct;                                                                   // Начальная цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента
       gos_stages : array of gos_stagesStruct;                                                                   // Стадии выполнения заявки
       gos_serviceCommission : MoneyStruct;                                                                      // Сервисная комиссия
       gos_currency : string;                                                                                    // Валюта заявки
-      gos_orderType : string;                                                                                   // Тип заявки [ORDER_TYPE_UNSPECIFIED, ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
+      gos_orderType : string;                                                                                   // Тип заявки [ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
       gos_orderDate : string;                                                                                   // Дата и время выставления заявки в часовом поясе UTC
       gos_instrumentUid : string;                                                                               // UID идентификатор инструмента
       gos_orderRequestId : string;                                                                              // Идентификатор ключа идемпотентности, переданный клиентом, в формате UID. Максимальная длина — 36 символов
       gos_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gos_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gos_error_description : int64;                                                                            // Код ошибки
+      gos_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetOrders
    go_request = record                                                                                          // Запрос для GetOrders
       go_token : string;                                                                                        // Токен
       go_accountId : string;                                                                                    // Номер счета
+      go_is_sandbox_flag : boolean;                                                                             // флаг работы в контуре песочницы
    end;
    go_stagesStruct = record
       go_price : MoneyStruct;                                                                                   // Цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента
@@ -382,7 +390,7 @@ type
    end;
    go_ordersStruct = record
       go_orderId : string;                                                                                      // Биржевой идентификатор заявки
-      go_executionReportStatus : string;                                                                        // Текущий статус заявки [EXECUTION_REPORT_STATUS_UNSPECIFIED, EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
+      go_executionReportStatus : string;                                                                        // Текущий статус заявки [EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
       go_lotsRequested : int64;                                                                                 // Запрошено лотов
       go_lotsExecuted : int64;                                                                                  // Исполнено лотов
       go_initialOrderPrice : MoneyStruct;                                                                       // Начальная цена заявки. Произведение количества запрошенных лотов на цену
@@ -391,13 +399,12 @@ type
       go_averagePositionPrice : MoneyStruct;                                                                    // Средняя цена позиции по сделке
       go_initialCommission : MoneyStruct;                                                                       // Начальная комиссия. Комиссия, рассчитанная на момент подачи заявки
       go_executedCommission : MoneyStruct;                                                                      // Фактическая комиссия по итогам исполнения заявки
-      go_figi : string;                                                                                         // Figi-идентификатор инструмента
-      go_direction : string;                                                                                    // Направление заявки [ORDER_DIRECTION_UNSPECIFIED, ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
+      go_direction : string;                                                                                    // Направление заявки [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       go_initialSecurityPrice : MoneyStruct;                                                                    // Начальная цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента
       go_stages : array of go_stagesStruct;                                                                     // Стадии выполнения заявки
       go_serviceCommission : MoneyStruct;                                                                       // Сервисная комиссия
       go_currency : string;                                                                                     // Валюта заявки
-      go_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_UNSPECIFIED, ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
+      go_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
       go_orderDate : string;                                                                                    // Дата и время выставления заявки в часовом поясе UTC
       go_instrumentUid : string;                                                                                // UID идентификатор инструмента
       go_orderRequestId : string;                                                                               // Идентификатор ключа идемпотентности, переданный клиентом, в формате UID. Максимальная длина — 36 символов
@@ -407,16 +414,18 @@ type
       go_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       go_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       go_error_description : int64;                                                                             // Код ошибки
+      go_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetOrderPrice
    gop_request = record                                                                                         // Запрос для GetOrderPrice
       gop_token : string;                                                                                       // Токен
       gop_accountId : string;                                                                                   // Номер счета
-      gop_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения Figi или instrument_uid
+      gop_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения instrument_uid
       gop_price : double;                                                                                       // Цена инструмента
-      gop_direction : string;                                                                                   // Направление заявки [ORDER_DIRECTION_UNSPECIFIED, ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
+      gop_direction : string;                                                                                   // Направление заявки [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       gop_quantity : int64;                                                                                     // Количество лотов
+      gop_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
    gop_extraBondStruct = record
       gop_aciValue : MoneyStruct;                                                                               // Значение НКД (накопленного купонного дохода) на дату
@@ -438,6 +447,7 @@ type
       gop_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gop_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gop_error_description : int64;                                                                            // Код ошибки
+      gop_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetCandles
@@ -445,9 +455,9 @@ type
       gc_token : string;                                                                                        // Токен
       gc_from : string;                                                                                         // Начало запрашиваемого периода по UTC
       gc_to : string;                                                                                           // Окончание запрашиваемого периода по UTC
-      gc_interval : string;                                                                                     // Интервал запрошенных свечей [CANDLE_INTERVAL_UNSPECIFIED, CANDLE_INTERVAL_1_MIN, CANDLE_INTERVAL_5_MIN, CANDLE_INTERVAL_15_MIN, CANDLE_INTERVAL_HOUR, CANDLE_INTERVAL_DAY, CANDLE_INTERVAL_2_MIN, CANDLE_INTERVAL_3_MIN, CANDLE_INTERVAL_10_MIN, CANDLE_INTERVAL_30_MIN, CANDLE_INTERVAL_2_HOUR, CANDLE_INTERVAL_4_HOUR, CANDLE_INTERVAL_WEEK, CANDLE_INTERVAL_MONTH]
-      gc_instrumentId : string;                                                                                 // Идентификатор инструмента. Принимает значение figi или instrument_uid
-      gc_candleSourceType : string;                                                                             // Тип источника свечи [CANDLE_SOURCE_UNSPECIFIED, CANDLE_SOURCE_EXCHANGE, CANDLE_SOURCE_INCLUDE_WEEKEND]
+      gc_interval : string;                                                                                     // Интервал запрошенных свечей [CANDLE_INTERVAL_1_MIN, CANDLE_INTERVAL_5_MIN, CANDLE_INTERVAL_15_MIN, CANDLE_INTERVAL_HOUR, CANDLE_INTERVAL_DAY, CANDLE_INTERVAL_2_MIN, CANDLE_INTERVAL_3_MIN, CANDLE_INTERVAL_10_MIN, CANDLE_INTERVAL_30_MIN, CANDLE_INTERVAL_2_HOUR, CANDLE_INTERVAL_4_HOUR, CANDLE_INTERVAL_WEEK, CANDLE_INTERVAL_MONTH]
+      gc_instrumentId : string;                                                                                 // Идентификатор инструмента. Принимает значение instrument_uid
+      gc_candleSourceType : string;                                                                             // Тип источника свечи [CANDLE_SOURCE_EXCHANGE, CANDLE_SOURCE_INCLUDE_WEEKEND]
       gc_limit : int64;                                                                                         // Максимальное количество свечей в ответе
    end;
    gc_candlesStruct = record
@@ -458,7 +468,7 @@ type
       gc_volume : int64;                                                                                        // Объем торгов в лотах
       gc_time : string;                                                                                         // Время свечи в часовом поясе UTC
       gc_isComplete : boolean;                                                                                  // Признак завершенности свечи. false — свеча за текущие интервал еще сформирована не полностью
-      gc_candleSource : string;                                                                                 // Тип источника свечи [CANDLE_SOURCE_UNSPECIFIED, CANDLE_SOURCE_EXCHANGE, CANDLE_SOURCE_DEALER_WEEKEND]
+      gc_candleSource : string;                                                                                 // Тип источника свечи [CANDLE_SOURCE_EXCHANGE, CANDLE_SOURCE_DEALER_WEEKEND]
       gc_volumeBuy : string;                                                                                    // Объем торгов на покупку
       gc_volumeSell : string;                                                                                   // Объем торгов на продажу
    end;
@@ -467,13 +477,14 @@ type
       gc_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       gc_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       gc_error_description : int64;                                                                             // Код ошибки
+      gc_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetOrderBook
    gob_request = record                                                                                         // Запрос для GetOrderBook
       gob_token : string;                                                                                       // Токен
       gob_depth : int64;                                                                                        // Глубина стакана (максимум 50)
-      gob_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение figi или instrument_uid
+      gob_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение instrument_uid
    end;
    gob_bidsStruct = record
       gob_price : double;                                                                                       // Цена за 1 инструмент. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
@@ -484,7 +495,6 @@ type
       gob_quantity : int64;                                                                                     // Количество в лотах
    end;
    gob_response = record                                                                                        // Ответ для GetOrderBook
-      gob_figi : string;                                                                                        // FIGI-идентификатор инструмента
       gob_depth : int64;                                                                                        // Глубина стакана (максимум 50)
       gob_bids : array of gob_bidsStruct;                                                                       // Множество пар значений на покупку
       gob_asks : array of gob_asksStruct;                                                                       // Множество пар значений на продажу
@@ -501,6 +511,7 @@ type
       gob_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gob_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gob_error_description : int64;                                                                            // Код ошибки
+      gob_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetTechAnalysis
@@ -514,12 +525,12 @@ type
    end;
    gta_request = record                                                                                         // Запрос для GetTechAnalysis
       gta_token : string;                                                                                       // Токен
-      gta_indicatorType : string;                                                                               // Тип технического индикатора [INDICATOR_TYPE_UNSPECIFIED, INDICATOR_TYPE_BB, INDICATOR_TYPE_EMA, INDICATOR_TYPE_RSI, INDICATOR_TYPE_MACD, INDICATOR_TYPE_SMA]
+      gta_indicatorType : string;                                                                               // Тип технического индикатора [INDICATOR_TYPE_BB, INDICATOR_TYPE_EMA, INDICATOR_TYPE_RSI, INDICATOR_TYPE_MACD, INDICATOR_TYPE_SMA]
       gta_instrumentUid : string;                                                                               // UID инструмента
       gta_from : string;                                                                                        // Начало запрашиваемого периода по UTC
       gta_to : string;                                                                                          // Окончание запрашиваемого периода по UTC
-      gta_interval : string;                                                                                    // Интервал свечи [INDICATOR_INTERVAL_UNSPECIFIED, INDICATOR_INTERVAL_ONE_MINUTE, INDICATOR_INTERVAL_FIVE_MINUTES, INDICATOR_INTERVAL_FIFTEEN_MINUTES, INDICATOR_INTERVAL_ONE_HOUR, INDICATOR_INTERVAL_ONE_DAY, INDICATOR_INTERVAL_2_MIN, INDICATOR_INTERVAL_3_MIN, INDICATOR_INTERVAL_10_MIN, INDICATOR_INTERVAL_30_MIN, INDICATOR_INTERVAL_2_HOUR, INDICATOR_INTERVAL_4_HOUR, INDICATOR_INTERVAL_WEEK, INDICATOR_INTERVAL_MONTH]
-      gta_typeOfPrice : string;                                                                                 // Тип цены, который используется при расчете индикатора [TYPE_OF_PRICE_UNSPECIFIED, TYPE_OF_PRICE_CLOSE, TYPE_OF_PRICE_OPEN, TYPE_OF_PRICE_HIGH, TYPE_OF_PRICE_LOW, TYPE_OF_PRICE_AVG]
+      gta_interval : string;                                                                                    // Интервал свечи [INDICATOR_INTERVAL_ONE_MINUTE, INDICATOR_INTERVAL_FIVE_MINUTES, INDICATOR_INTERVAL_FIFTEEN_MINUTES, INDICATOR_INTERVAL_ONE_HOUR, INDICATOR_INTERVAL_ONE_DAY, INDICATOR_INTERVAL_2_MIN, INDICATOR_INTERVAL_3_MIN, INDICATOR_INTERVAL_10_MIN, INDICATOR_INTERVAL_30_MIN, INDICATOR_INTERVAL_2_HOUR, INDICATOR_INTERVAL_4_HOUR, INDICATOR_INTERVAL_WEEK, INDICATOR_INTERVAL_MONTH]
+      gta_typeOfPrice : string;                                                                                 // Тип цены, который используется при расчете индикатора [TYPE_OF_PRICE_CLOSE, TYPE_OF_PRICE_OPEN, TYPE_OF_PRICE_HIGH, TYPE_OF_PRICE_LOW, TYPE_OF_PRICE_AVG]
       gta_length : int64;                                                                                       // Торговый период, за который рассчитывается индикатор
       gta_deviation : gta_deviationMultiplierStruct;                                                            // Параметры отклонения
       gta_smoothing : gta_smoothingStruct;                                                                      // Параметры сглаживания
@@ -537,13 +548,14 @@ type
       gta_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gta_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gta_error_description : int64;                                                                            // Код ошибки
+      gta_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры Shares
    s_request = record                                                                                           // Запрос для Shares
       s_token : string;                                                                                         // Токен
-      s_instrumentStatus : string;                                                                              // Статус запрашиваемых инструментов [INSTRUMENT_TYPE_UNSPECIFIED, INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
-      s_instrumentExchange : string;                                                                            // Тип площадки торговли [INSTRUMENT_EXCHANGE_UNSPECIFIED, INSTRUMENT_EXCHANGE_DEALER]
+      s_instrumentStatus : string;                                                                              // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
+      s_instrumentExchange : string;                                                                            // Тип площадки торговли [INSTRUMENT_EXCHANGE_DEALER]
    end;
    s_brandStruct = record
       s_logoName : string;                                                                                      // Логотип инструмента. Имя файла для получения логотипа https://invest-brands.cdn-tbank.ru/<logoName<size>.png>, где <logoName<size>.png> — логотип компании с размерами в точках. Доступные размеры — x160, x320, x640
@@ -551,7 +563,6 @@ type
       s_textColor : string;                                                                                     // Цвет текста для цвета логотипа бренда в формате #000000...#ffffff
    end;
    s_instrumentsStruct = record
-      s_figi : string;                                                                                          // FIGI-идентификатор инструмента
       s_ticker : string;                                                                                        // Тикер инструмента
       s_classCode : string;                                                                                     // Класс-код (секция торгов)
       s_isin : string;                                                                                          // ISIN-идентификатор инструмента
@@ -573,19 +584,19 @@ type
       s_sector : string;                                                                                        // Сектор экономики
       s_issueSizePlan : int64;                                                                                  // Плановый размер выпуска
       s_nominal : MoneyStruct;                                                                                  // Номинал
-      s_tradingStatus : string;                                                                                 // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_UNSPECIFIED, SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
+      s_tradingStatus : string;                                                                                 // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
       s_otcFlag : boolean;                                                                                      // Флаг, используемый ранее для определения внебиржевых инструментов. На данный момент не используется для торгуемых через API инструментов. Может использоваться как фильтр для операций, совершавшихся некоторое время назад на ОТС площадке
       s_buyAvailableFlag : boolean;                                                                             // Признак доступности для покупки
       s_sellAvailableFlag : boolean;                                                                            // Признак доступности для продажи
       s_divYieldFlag : boolean;                                                                                 // Признак наличия дивидендной доходности
-      s_shareType : string;                                                                                     // Тип акций [SHARE_TYPE_UNSPECIFIED, SHARE_TYPE_COMMON, SHARE_TYPE_PREFERRED, SHARE_TYPE_ADR, SHARE_TYPE_GDR, SHARE_TYPE_MLP, SHARE_TYPE_NY_REG_SHRS, SHARE_TYPE_CLOSED_END_FUND, SHARE_TYPE_REIT]
+      s_shareType : string;                                                                                     // Тип акций [SHARE_TYPE_COMMON, SHARE_TYPE_PREFERRED, SHARE_TYPE_ADR, SHARE_TYPE_GDR, SHARE_TYPE_MLP, SHARE_TYPE_NY_REG_SHRS, SHARE_TYPE_CLOSED_END_FUND, SHARE_TYPE_REIT]
       s_minPriceIncrement : double;                                                                             // Шаг цены
       s_apiTradeAvailableFlag : boolean;                                                                        // Возможность торговать инструментом через API
       s_uid : string;                                                                                           // Уникальный идентификатор инструмента
-      s_realExchange : string;                                                                                  // Реальная площадка исполнения расчетов [REAL_EXCHANGE_UNSPECIFIED, REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
+      s_realExchange : string;                                                                                  // Реальная площадка исполнения расчетов [REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
       s_positionUid : string;                                                                                   // Уникальный идентификатор позиции инструмента
       s_assetUid : string;                                                                                      // Уникальный идентификатор актива
-      s_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_UNSPECIFIED, INSTRUMENT_EXCHANGE_DEALER]
+      s_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_DEALER]
       s_requiredTests : array of string;                                                                        // Тесты, которые необходимо пройти клиенту, чтобы совершать сделки по инструменту
       s_forIisFlag : boolean;                                                                                   // Признак доступности для ИИС
       s_forQualInvestorFlag : boolean;                                                                          // Флаг, отображающий доступность торговли инструментом только для квалифицированных инвесторов
@@ -603,12 +614,13 @@ type
       s_error_code : int64;                                                                                     // Уникальный идентификатор ошибки
       s_error_message : string;                                                                                 // Пользовательское сообщение об ошибке
       s_error_description : int64;                                                                              // Код ошибки
+      s_x_tracking_id : string;                                                                                 // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры ShareBy
    sb_request = record                                                                                          // Запрос для ShareBy
       sb_token : string;                                                                                        // Токен
-      sb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_UNSPECIFIED, INSTRUMENT_ID_TYPE_FIGI, INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
+      sb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
       sb_classCode : string;                                                                                    // Идентификатор class_code. Обязательный, если id_type = ticker
       sb_id : string;                                                                                           // Идентификатор запрашиваемого инструмента
    end;
@@ -617,13 +629,14 @@ type
       sb_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       sb_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       sb_error_description : int64;                                                                             // Код ошибки
+      sb_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры Bonds
    b_request = record                                                                                           // Запрос для Bonds
       b_token : string;                                                                                         // Токен
-      b_instrumentStatus : string;                                                                              // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_UNSPECIFIED, INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
-      b_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_UNSPECIFIED, INSTRUMENT_EXCHANGE_DEALER]
+      b_instrumentStatus : string;                                                                              // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
+      b_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_DEALER]
    end;
    b_brandStruct = record
       b_logoName : string;                                                                                      // Логотип инструмента. Имя файла для получения логотипа https://invest-brands.cdn-tbank.ru/<logoName<size>.png>, где <logoName<size>.png> — логотип компании с размерами в точках. Доступные размеры — x160, x320, x640
@@ -631,7 +644,6 @@ type
       b_textColor : string;                                                                                     // Цвет текста для цвета логотипа бренда в формате #000000...#ffffff
    end;
    b_instrumentsStruct = record
-      b_figi : string;                                                                                          // FIGI-идентификатор инструмента
       b_ticker : string;                                                                                        // Тикер инструмента
       b_classCode : string;                                                                                     // Класс-код (секция торгов)
       b_isin : string;                                                                                          // ISIN-идентификатор инструмента
@@ -660,7 +672,7 @@ type
       b_issueKind : string;                                                                                     // Форма выпуска. Возможные значения: documentary — документарная; non_documentary — бездокументарная
       b_issueSize : int64;                                                                                      // Размер выпуска
       b_issueSizePlan : int64;                                                                                  // Плановый размер выпуска
-      b_tradingStatus : string;                                                                                 // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_UNSPECIFIED, SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
+      b_tradingStatus : string;                                                                                 // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
       b_otcFlag : boolean;                                                                                      // Флаг, используемый ранее для определения внебиржевых инструментов. На данный момент не используется для торгуемых через API инструментов. Может использоваться как фильтр для операций, совершавшихся некоторое время назад на ОТС площадке
       b_buyAvailableFlag : boolean;                                                                             // Признак доступности для покупки
       b_sellAvailableFlag : boolean;                                                                            // Признак доступности для продажи
@@ -670,7 +682,7 @@ type
       b_minPriceIncrement : double;                                                                             // Шаг цены
       b_apiTradeAvailableFlag : boolean;                                                                        // Параметр указывает на возможность торговать инструментом через API
       b_uid : string;                                                                                           // Уникальный идентификатор инструмента
-      b_realExchange : string;                                                                                  // Реальная площадка исполнения расчетов [REAL_EXCHANGE_UNSPECIFIED, REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
+      b_realExchange : string;                                                                                  // Реальная площадка исполнения расчетов [REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
       b_positionUid : string;                                                                                   // Уникальный идентификатор позиции инструмента
       b_assetUid : string;                                                                                      // Уникальный идентификатор актива
       b_requiredTests : array of string;                                                                        // Тесты, которые необходимо пройти клиенту, чтобы совершать сделки по инструменту
@@ -684,7 +696,7 @@ type
       b_first1dayCandleDate : string;                                                                           // Дата первой дневной свечи
       b_riskLevel : string;                                                                                     // Уровень риска облигации
       b_brand : b_brandStruct;                                                                                  // Информация о бренде
-      b_bondType : string;                                                                                      // Тип облигации [BOND_TYPE_UNSPECIFIED, BOND_TYPE_REPLACED]
+      b_bondType : string;                                                                                      // Тип облигации [BOND_TYPE_REPLACED]
       b_callDate : string;                                                                                      // Дата погашения облигации (оферта?)
       b_dlongClient : double;                                                                                   // Ставка риска в лонг, с учетом текущего уровня риска портфеля клиента
       b_dshortClient : double;                                                                                  // Ставка риска в шорт, с учетом текущего уровня риска портфеля клиента
@@ -694,12 +706,13 @@ type
       b_error_code : int64;                                                                                     // Уникальный идентификатор ошибки
       b_error_message : string;                                                                                 // Пользовательское сообщение об ошибке
       b_error_description : int64;                                                                              // Код ошибки
+      b_x_tracking_id : string;                                                                                 // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры BondBy
    bb_request = record                                                                                          // Запрос для BondBy
       bb_token : string;                                                                                        // Токен
-      bb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_UNSPECIFIED, INSTRUMENT_ID_TYPE_FIGI, INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
+      bb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
       bb_classCode : string;                                                                                    // Идентификатор class_code. Обязательный, если id_type = ticker
       bb_id : string;                                                                                           // Идентификатор запрашиваемого инструмента
    end;
@@ -708,13 +721,14 @@ type
       bb_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       bb_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       bb_error_description : int64;                                                                             // Код ошибки
+      bb_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры Futures
    f_request = record                                                                                           // Запрос для Futures
       f_token : string;                                                                                         // Токен
-      f_instrumentStatus : string;                                                                              // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_UNSPECIFIED, INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
-      f_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_UNSPECIFIED, INSTRUMENT_EXCHANGE_DEALER]
+      f_instrumentStatus : string;                                                                              // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
+      f_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_DEALER]
    end;
    f_brandStruct = record
       f_logoName : string;                                                                                      // Логотип инструмента. Имя файла для получения логотипа https://invest-brands.cdn-tbank.ru/<logoName<size>.png>, где <logoName<size>.png> — логотип компании с размерами в точках. Доступные размеры — x160, x320, x640
@@ -722,7 +736,6 @@ type
       f_textColor : string;                                                                                     // Цвет текста для цвета логотипа бренда в формате #000000...#ffffff
    end;  
    f_instrumentsStruct = record
-      f_figi : string;                                                                                          // FIGI-идентификатор инструмента
       f_ticker : string;                                                                                        // Тикер инструмента
       f_classCode : string;                                                                                     // Класс-код (секция торгов)
       f_lot : int64;                                                                                            // Лотность инструмента. Возможно совершение операций только на количества ценной бумаги, кратные параметру lot
@@ -746,14 +759,14 @@ type
       f_countryOfRiskName : string;                                                                             // Наименование страны риска — то есть страны, в которой компания ведёт основной бизнес
       f_sector : string;                                                                                        // Сектор экономики
       f_expirationDate : string;                                                                                // Дата истечения срока в часов поясе UTC
-      f_tradingStatus : string;                                                                                 // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_UNSPECIFIED, SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
+      f_tradingStatus : string;                                                                                 // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
       f_otcFlag : boolean;                                                                                      // Флаг, используемый ранее для определения внебиржевых инструментов. На данный момент не используется для торгуемых через API инструментов. Может использоваться как фильтр для операций, совершавшихся некоторое время назад на ОТС площадке
       f_buyAvailableFlag : boolean;                                                                             // Признак доступности для покупки
       f_sellAvailableFlag : boolean;                                                                            // Признак доступности для продажи
       f_minPriceIncrement : double;                                                                             // Шаг цены
       f_apiTradeAvailableFlag : boolean;                                                                        // Параметр указывает на возможность торговать инструментом через API
       f_uid : string;                                                                                           // Уникальный идентификатор инструмента
-      f_realExchange : string;                                                                                  // Реальная площадка исполнения расчетов [REAL_EXCHANGE_UNSPECIFIED, REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
+      f_realExchange : string;                                                                                  // Реальная площадка исполнения расчетов [REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
       f_positionUid : string;                                                                                   // Уникальный идентификатор позиции инструмента
       f_basicAssetPositionUid : string;                                                                         // Уникальный идентификатор позиции основного инструмента
       f_requiredTests : array of string;                                                                        // Тесты, которые необходимо пройти клиенту, чтобы совершать сделки по инструменту
@@ -775,12 +788,13 @@ type
       f_error_code : int64;                                                                                     // Уникальный идентификатор ошибки
       f_error_message : string;                                                                                 // Пользовательское сообщение об ошибке
       f_error_description : int64;                                                                              // Код ошибки
+      f_x_tracking_id : string;                                                                                 // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры FutureBy
    fb_request = record                                                                                          // Запрос для FutureBy
       fb_token : string;                                                                                        // Токен
-      fb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_UNSPECIFIED, INSTRUMENT_ID_TYPE_FIGI, INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
+      fb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
       fb_classCode : string;                                                                                    // Идентификатор class_code. Обязательный, если id_type = ticker
       fb_id : string;                                                                                           // Идентификатор запрашиваемого инструмента
    end;
@@ -789,13 +803,14 @@ type
       fb_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       fb_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       fb_error_description : int64;                                                                             // Код ошибки
+      fb_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры Etfs
    e_request = record                                                                                           // Запрос для Etfs
       e_token : string;                                                                                         // Токен
-      e_instrumentStatus : string;                                                                              // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_UNSPECIFIED, INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
-      e_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_UNSPECIFIED, INSTRUMENT_EXCHANGE_DEALER]
+      e_instrumentStatus : string;                                                                              // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
+      e_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_DEALER]
    end;
    e_brandStruct = record
       e_logoName : string;                                                                                      // Логотип инструмента. Имя файла для получения логотипа https://invest-brands.cdn-tbank.ru/<logoName<size>.png>, где <logoName<size>.png> — логотип компании с размерами в точках. Доступные размеры — x160, x320, x640
@@ -803,7 +818,6 @@ type
       e_textColor : string;                                                                                     // Цвет текста для цвета логотипа бренда в формате #000000...#ffffff
    end;
    e_instrumentsStruct = record
-      e_figi : string;                                                                                          // FIGI-идентификатор инструмента
       e_ticker : string;                                                                                        // Тикер инструмента
       e_classCode : string;                                                                                     // Класс-код (секция торгов)
       e_isin : string;                                                                                          // ISIN-идентификатор инструмента
@@ -826,17 +840,17 @@ type
       e_countryOfRiskName : string;                                                                             // Наименование страны риска — то есть страны, в которой компания ведет основной бизнес
       e_sector : string;                                                                                        // Сектор экономики
       e_rebalancingFreq : string;                                                                               // Частота ребалансировки
-      e_tradingStatus : string;                                                                                 // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_UNSPECIFIED, SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
+      e_tradingStatus : string;                                                                                 // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
       e_otcFlag : boolean;                                                                                      // Флаг, используемый ранее для определения внебиржевых инструментов. На данный момент не используется для торгуемых через API инструментов. Может использоваться как фильтр для операций, совершавшихся некоторое время назад на ОТС площадке
       e_buyAvailableFlag : boolean;                                                                             // Признак доступности для покупки
       e_sellAvailableFlag : boolean;                                                                            // Признак доступности для продажи
       e_minPriceIncrement : double;                                                                             // Шаг цены
       e_apiTradeAvailableFlag : boolean;                                                                        // Параметр указывает на возможность торговать инструментом через API
       e_uid : string;                                                                                           // Уникальный идентификатор инструмента
-      e_realExchange : string;                                                                                  // Реальная площадка исполнения расчетов [REAL_EXCHANGE_UNSPECIFIED, REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
+      e_realExchange : string;                                                                                  // Реальная площадка исполнения расчетов [REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
       e_positionUid : string;                                                                                   // Уникальный идентификатор позиции инструмента
       e_assetUid : string;                                                                                      // Уникальный идентификатор актива
-      e_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_UNSPECIFIED, INSTRUMENT_EXCHANGE_DEALER]
+      e_instrumentExchange : string;                                                                            // Площадка торговли [INSTRUMENT_EXCHANGE_DEALER]
       e_requiredTests : array of string;                                                                        // Тесты, которые необходимо пройти клиенту, чтобы совершать сделки по инструменту
       e_forIisFlag : boolean;                                                                                   // Признак доступности для ИИС
       e_forQualInvestorFlag : boolean;                                                                          // Флаг, отображающий доступность торговли инструментом только для квалифицированных инвесторов
@@ -854,12 +868,13 @@ type
       e_error_code : int64;                                                                                     // Уникальный идентификатор ошибки
       e_error_message : string;                                                                                 // Пользовательское сообщение об ошибке
       e_error_description : int64;                                                                              // Код ошибки
+      e_x_tracking_id : string;                                                                                 // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры EtfBy
    eb_request = record                                                                                          // Запрос для EtfBy
       eb_token : string;                                                                                        // Токен
-      eb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_UNSPECIFIED, INSTRUMENT_ID_TYPE_FIGI, INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
+      eb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
       eb_classCode : string;                                                                                    // Идентификатор class_code. Обязательный, если id_type = ticker
       eb_id : string;                                                                                           // Идентификатор запрашиваемого инструмента
    end;
@@ -868,25 +883,25 @@ type
       eb_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       eb_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       eb_error_description : int64;                                                                             // Код ошибки
+      eb_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры FindInstrument
    fi_request = record                                                                                          // Запрос для FindInstrument
       fi_token : string;                                                                                        // Токен
       fi_query : string;                                                                                        // Строка поиска
-      fi_instrumentKind : string;                                                                               // Тип инструмента [INSTRUMENT_TYPE_UNSPECIFIED, INSTRUMENT_TYPE_BOND, INSTRUMENT_TYPE_SHARE, INSTRUMENT_TYPE_CURRENCY, INSTRUMENT_TYPE_ETF, INSTRUMENT_TYPE_FUTURES, INSTRUMENT_TYPE_SP, INSTRUMENT_TYPE_OPTION, INSTRUMENT_TYPE_CLEARING_CERTIFICATE, INSTRUMENT_TYPE_INDEX, INSTRUMENT_TYPE_COMMODITY]
+      fi_instrumentKind : string;                                                                               // Тип инструмента [INSTRUMENT_TYPE_BOND, INSTRUMENT_TYPE_SHARE, INSTRUMENT_TYPE_CURRENCY, INSTRUMENT_TYPE_ETF, INSTRUMENT_TYPE_FUTURES, INSTRUMENT_TYPE_SP, INSTRUMENT_TYPE_OPTION, INSTRUMENT_TYPE_CLEARING_CERTIFICATE, INSTRUMENT_TYPE_INDEX, INSTRUMENT_TYPE_COMMODITY]
       fi_apiTradeAvailableFlag : boolean;                                                                       // Фильтр для отображения только торговых инструментов
    end;
    fi_instrumentsStruct = record
       fi_isin : string;                                                                                         // ISIN-идентификатор инструмента
-      fi_figi : string;                                                                                         // FIGI-идентификатор инструмента
       fi_ticker : string;                                                                                       // Тикер инструмента
       fi_classCode : string;                                                                                    // Класс-код (секция торгов)
       fi_instrumentType : string;                                                                               // Тип инструмента
       fi_name : string;                                                                                         // Название инструмента
       fi_uid : string;                                                                                          // Уникальный идентификатор инструмента
       fi_positionUid : string;                                                                                  // Уникальный идентификатор позиции инструмента
-      fi_instrumentKind : string;                                                                               // Тип инструмента [INSTRUMENT_TYPE_UNSPECIFIED, INSTRUMENT_TYPE_BOND, INSTRUMENT_TYPE_SHARE, INSTRUMENT_TYPE_CURRENCY, INSTRUMENT_TYPE_ETF, INSTRUMENT_TYPE_FUTURES, INSTRUMENT_TYPE_SP, INSTRUMENT_TYPE_OPTION, INSTRUMENT_TYPE_CLEARING_CERTIFICATE, INSTRUMENT_TYPE_INDEX, INSTRUMENT_TYPE_COMMODITY]
+      fi_instrumentKind : string;                                                                               // Тип инструмента [INSTRUMENT_TYPE_BOND, INSTRUMENT_TYPE_SHARE, INSTRUMENT_TYPE_CURRENCY, INSTRUMENT_TYPE_ETF, INSTRUMENT_TYPE_FUTURES, INSTRUMENT_TYPE_SP, INSTRUMENT_TYPE_OPTION, INSTRUMENT_TYPE_CLEARING_CERTIFICATE, INSTRUMENT_TYPE_INDEX, INSTRUMENT_TYPE_COMMODITY]
       fi_apiTradeAvailableFlag : boolean;                                                                       // Возможность торговать инструментом через API
       fi_forIisFlag : boolean;                                                                                  // Признак доступности для ИИС
       fi_first1minCandleDate : string;                                                                          // Дата первой минутной свечи
@@ -901,16 +916,16 @@ type
       fi_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       fi_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       fi_error_description : int64;                                                                             // Код ошибки
+      fi_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetTradingStatus
    gts_request = record                                                                                         // Запрос для GetTradingStatus
       gts_token : string;                                                                                       // Токен
-      gts_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение figi или instrument_uid
+      gts_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение instrument_uid
    end;
    gts_response = record                                                                                        // Ответ для GetTradingStatus
-      gts_figi : string;                                                                                        // FIGI-идентификатор инструмента
-      gts_tradingStatus : string;                                                                               // Статус торговли инструментом [SECURITY_TRADING_STATUS_UNSPECIFIED, SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
+      gts_tradingStatus : string;                                                                               // Статус торговли инструментом [SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
       gts_limitOrderAvailableFlag : boolean;                                                                    // Признак доступности выставления лимитной заявки по инструменту
       gts_marketOrderAvailableFlag : boolean;                                                                   // Признак доступности выставления рыночной заявки по инструменту
       gts_apiTradeAvailableFlag : boolean;                                                                      // Признак доступности торгов через API
@@ -920,6 +935,7 @@ type
       gts_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gts_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gts_error_description : int64;                                                                            // Код ошибки
+      gts_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры CancelStopOrder
@@ -927,38 +943,41 @@ type
       cso_token : string;                                                                                       // Токен
       cso_accountId : string;                                                                                   // Идентификатор счета клиента
       cso_stopOrderId : string;                                                                                 // Уникальный идентификатор стоп-заявки
+      cso_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
    cso_response = record                                                                                        // Ответ для CancelStopOrder
       cso_time : string;                                                                                        // Время отмены заявки по UTC
       cso_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       cso_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       cso_error_description : int64;                                                                            // Код ошибки
+      cso_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры PostStopOrder
    pso_trailingDataStruct = record
       pso_indent : double;                                                                                      // Отступ
-      pso_indentType : string;                                                                                  // Тип параметров значений трейлинг-стопа [TRAILING_VALUE_UNSPECIFIED, TRAILING_VALUE_ABSOLUTE, TRAILING_VALUE_RELATIVE]
+      pso_indentType : string;                                                                                  // Тип параметров значений трейлинг-стопа [TRAILING_VALUE_ABSOLUTE, TRAILING_VALUE_RELATIVE]
       pso_spread : double;                                                                                      // Размер защитного спреда
-      pso_spreadType : string;                                                                                  // Тип величины защитного спреда [TRAILING_VALUE_UNSPECIFIED, TRAILING_VALUE_ABSOLUTE, TRAILING_VALUE_RELATIVE]
+      pso_spreadType : string;                                                                                  // Тип величины защитного спреда [TRAILING_VALUE_ABSOLUTE, TRAILING_VALUE_RELATIVE]
    end;
    pso_request = record                                                                                         // Запрос для PostStopOrder
       pso_token : string;                                                                                       // Токен
       pso_quantity : int64;                                                                                     // Количество лотов
       pso_price : double;                                                                                       // Цена за 1 инструмент биржевой заявки, которая будет выставлена при срабатывании по достижению stop_price. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
       pso_stopPrice : double;                                                                                   // Стоп-цена заявки за 1 инструмент. При достижении стоп-цены происходит активация стоп-заявки, в результате чего выставляется биржевая заявка. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
-      pso_direction : string;                                                                                   // Направление сделки стоп-заявки [STOP_ORDER_DIRECTION_UNSPECIFIED, STOP_ORDER_DIRECTION_BUY, STOP_ORDER_DIRECTION_SELL]
+      pso_direction : string;                                                                                   // Направление сделки стоп-заявки [STOP_ORDER_DIRECTION_BUY, STOP_ORDER_DIRECTION_SELL]
       pso_accountId : string;                                                                                   // Идентификатор счета клиента
-      pso_expirationType : string;                                                                              // Тип экспирации стоп-заявке [STOP_ORDER_EXPIRATION_TYPE_UNSPECIFIED, STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL, STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_DATE]
-      pso_stopOrderType : string;                                                                               // Тип стоп-заявки [STOP_ORDER_TYPE_UNSPECIFIED, STOP_ORDER_TYPE_TAKE_PROFIT, STOP_ORDER_TYPE_STOP_LOSS, STOP_ORDER_TYPE_STOP_LIMIT]
+      pso_expirationType : string;                                                                              // Тип экспирации стоп-заявке [STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL, STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_DATE]
+      pso_stopOrderType : string;                                                                               // Тип стоп-заявки [STOP_ORDER_TYPE_TAKE_PROFIT, STOP_ORDER_TYPE_STOP_LOSS, STOP_ORDER_TYPE_STOP_LIMIT]
       pso_expireDate : string;                                                                                  // Дата и время окончания действия стоп-заявки по UTC. Для ExpirationType = GoodTillDate заполнение обязательно, для GoodTillCancel игнорируется
-      pso_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение figi или instrument_uid
-      pso_exchangeOrderType : string;                                                                           // Тип выставляемой заявки [EXCHANGE_ORDER_TYPE_UNSPECIFIED, EXCHANGE_ORDER_TYPE_MARKET, EXCHANGE_ORDER_TYPE_LIMIT]
-      pso_takeProfitType : string;                                                                              // Тип TakeProfit-заявки [TAKE_PROFIT_TYPE_UNSPECIFIED, TAKE_PROFIT_TYPE_REGULAR, TAKE_PROFIT_TYPE_TRAILING]
+      pso_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение instrument_uid
+      pso_exchangeOrderType : string;                                                                           // Тип выставляемой заявки [EXCHANGE_ORDER_TYPE_MARKET, EXCHANGE_ORDER_TYPE_LIMIT]
+      pso_takeProfitType : string;                                                                              // Тип TakeProfit-заявки [TAKE_PROFIT_TYPE_REGULAR, TAKE_PROFIT_TYPE_TRAILING]
       pso_trailingData : pso_trailingDataStruct;                                                                // Массив с параметрами трейлинг-стопа
-      pso_priceType : string;                                                                                   // Тип цены [PRICE_TYPE_UNSPECIFIED, PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
+      pso_priceType : string;                                                                                   // Тип цены [PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
       pso_orderId : string;                                                                                     // Идентификатор запроса выставления поручения для целей идемпотентности в формате UID. Максимальная длина — 36 символов
       pso_confirmMarginTrade : boolean;                                                                         // Согласие на выставление заявки, которая может привести к непокрытой позиции, по умолчанию false
+      pso_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
    pso_responseMetadataStruct = record
       pso_trackingId : string;                                                                                  // Идентификатор трекинга
@@ -971,39 +990,40 @@ type
       pso_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       pso_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       pso_error_description : int64;                                                                            // Код ошибки
+      pso_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetStopOrders
    gso_request = record                                                                                         // Запрос для GetStopOrders
       gso_token : string;                                                                                       // Токен
       gso_accountId : string;                                                                                   // Идентификатор счета клиента
-      gso_status : string;                                                                                      // Статус стоп-заявки [STOP_ORDER_STATUS_UNSPECIFIED, STOP_ORDER_STATUS_ALL, STOP_ORDER_STATUS_ACTIVE, STOP_ORDER_STATUS_EXECUTED, STOP_ORDER_STATUS_CANCELED, STOP_ORDER_STATUS_EXPIRED]
+      gso_status : string;                                                                                      // Статус стоп-заявки [STOP_ORDER_STATUS_ALL, STOP_ORDER_STATUS_ACTIVE, STOP_ORDER_STATUS_EXECUTED, STOP_ORDER_STATUS_CANCELED, STOP_ORDER_STATUS_EXPIRED]
       gso_from : string;                                                                                        // Левая граница в формате UTC
       gso_to : string;                                                                                          // Правая граница в формате UTC
+      gso_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
    gso_trailingDataStruct = record
       gso_indent : double;                                                                                      // Отступ
-      gso_indentType : string;                                                                                  // Тип параметров значений трейлинг-стопа [TRAILING_VALUE_UNSPECIFIED, TRAILING_VALUE_ABSOLUTE, TRAILING_VALUE_RELATIVE]
+      gso_indentType : string;                                                                                  // Тип параметров значений трейлинг-стопа [TRAILING_VALUE_ABSOLUTE, TRAILING_VALUE_RELATIVE]
       gso_spread : double;                                                                                      // Размер защитного спреда
-      gso_spreadType : string;                                                                                  // Тип величины защитного спреда [TRAILING_VALUE_UNSPECIFIED, TRAILING_VALUE_ABSOLUTE, TRAILING_VALUE_RELATIVE]
+      gso_spreadType : string;                                                                                  // Тип величины защитного спреда [TRAILING_VALUE_ABSOLUTE, TRAILING_VALUE_RELATIVE]
    end;
    gso_stopOrdersStruct = record
       gso_stopOrderId : string;                                                                                 // Уникальный идентификатор стоп-заявки
       gso_lotsRequested : int64;                                                                                // Запрошено лотов
-      gso_figi : string;                                                                                        // FIGI-идентификатор инструмента
-      gso_direction : string;                                                                                   // Направление сделки стоп-заявки [STOP_ORDER_DIRECTION_UNSPECIFIED, STOP_ORDER_DIRECTION_BUY, STOP_ORDER_DIRECTION_SELL]
+      gso_direction : string;                                                                                   // Направление сделки стоп-заявки [STOP_ORDER_DIRECTION_BUY, STOP_ORDER_DIRECTION_SELL]
       gso_currency : string;                                                                                    // Валюта стоп-заявки
-      gso_orderType : string;                                                                                   // Тип стоп-заявки [STOP_ORDER_TYPE_UNSPECIFIED, STOP_ORDER_TYPE_TAKE_PROFIT, STOP_ORDER_TYPE_STOP_LOSS, STOP_ORDER_TYPE_STOP_LIMIT]
+      gso_orderType : string;                                                                                   // Тип стоп-заявки [STOP_ORDER_TYPE_TAKE_PROFIT, STOP_ORDER_TYPE_STOP_LOSS, STOP_ORDER_TYPE_STOP_LIMIT]
       gso_createDate : string;                                                                                  // Дата и время выставления заявки по UTC
       gso_activationDateTime : string;                                                                          // Дата и время конвертации стоп-заявки в биржевую по UTC
       gso_expirationTime : string;                                                                              // Дата и время снятия заявки по UTC
       gso_price : MoneyStruct;                                                                                  // Цена заявки за 1 инструмент. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
       gso_stopPrice : MoneyStruct;                                                                              // Цена активации стоп-заявки за 1 инструмент. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
       gso_instrumentUid : string;                                                                               // instrument_uid-идентификатор инструмента
-      gso_takeProfitType : string;                                                                              // Тип TakeProfit-заявки [TAKE_PROFIT_TYPE_UNSPECIFIED, TAKE_PROFIT_TYPE_REGULAR, TAKE_PROFIT_TYPE_TRAILING]
+      gso_takeProfitType : string;                                                                              // Тип TakeProfit-заявки [TAKE_PROFIT_TYPE_REGULAR, TAKE_PROFIT_TYPE_TRAILING]
       gso_trailingData : gso_trailingDataStruct;                                                                // Параметры трейлинг-стопа
-      gso_status : string;                                                                                      // Статус стоп-заявки [STOP_ORDER_STATUS_UNSPECIFIED, STOP_ORDER_STATUS_ALL, STOP_ORDER_STATUS_ACTIVE, STOP_ORDER_STATUS_EXECUTED, STOP_ORDER_STATUS_CANCELED, STOP_ORDER_STATUS_EXPIRED]
-      gso_exchangeOrderType : string;                                                                           // Тип выставляемой заявки [EXCHANGE_ORDER_TYPE_UNSPECIFIED, EXCHANGE_ORDER_TYPE_MARKET, EXCHANGE_ORDER_TYPE_LIMIT]
+      gso_status : string;                                                                                      // Статус стоп-заявки [STOP_ORDER_STATUS_ALL, STOP_ORDER_STATUS_ACTIVE, STOP_ORDER_STATUS_EXECUTED, STOP_ORDER_STATUS_CANCELED, STOP_ORDER_STATUS_EXPIRED]
+      gso_exchangeOrderType : string;                                                                           // Тип выставляемой заявки [EXCHANGE_ORDER_TYPE_MARKET, EXCHANGE_ORDER_TYPE_LIMIT]
       gso_exchangeOrderId : string;                                                                             // Идентификатор биржевой заявки
    end;
    gso_response = record                                                                                        // Ответ для GetStopOrders
@@ -1011,12 +1031,13 @@ type
       gso_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gso_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gso_error_description : int64;                                                                            // Код ошибки
+      gso_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetInstrumentBy
    gib_request = record                                                                                         // Запрос для GetInstrumentBy
       gib_token : string;                                                                                       // Токен
-      gib_idType : string;                                                                                      // Тип идентификатора инструмента [INSTRUMENT_ID_UNSPECIFIED, INSTRUMENT_ID_TYPE_FIGI, INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
+      gib_idType : string;                                                                                      // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
       gib_classCode : string;                                                                                   // Идентификатор class_code. Обязательный, если id_type = ticker
       gib_id : string;                                                                                          // Идентификатор запрашиваемого инструмента
    end;
@@ -1026,7 +1047,6 @@ type
       gib_textColor : string;                                                                                   // Цвет текста для цвета логотипа бренда в формате #000000...#ffffff
    end;
    gib_instrumentStruct = record
-      gib_figi : string;                                                                                        // FIGI-идентификатор инструмента
       gib_ticker : string;                                                                                      // Тикер инструмента
       gib_classCode : string;                                                                                   // Класс-код инструмента
       gib_isin : string;                                                                                        // ISIN-идентификатор инструмента
@@ -1044,14 +1064,14 @@ type
       gib_countryOfRisk : string;                                                                               // Код страны риска — то есть страны, в которой компания ведет основной бизнес
       gib_countryOfRiskName : string;                                                                           // Наименование страны риска — то есть страны, в которой компания ведет основной бизнес
       gib_instrumentType : string;                                                                              // Тип инструмента
-      gib_tradingStatus : string;                                                                               // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_UNSPECIFIED, SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
+      gib_tradingStatus : string;                                                                               // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
       gib_otcFlag : boolean;                                                                                    // Флаг, используемый ранее для определения внебиржевых инструментов. На данный момент не используется для торгуемых через API инструментов. Может использоваться как фильтр для операций, совершавшихся некоторое время назад на ОТС площадке
       gib_buyAvailableFlag : boolean;                                                                           // Признак доступности для покупки
       gib_sellAvailableFlag : boolean;                                                                          // Признак доступности для продажи
       gib_minPriceIncrement : double;                                                                           // Шаг цены
       gib_apiTradeAvailableFlag : boolean;                                                                      // Параметр указывает на возможность торговать инструментом через API
       gib_uid : string;                                                                                         // Уникальный идентификатор инструмента
-      gib_realExchange : string;                                                                                // Реальная площадка исполнения расчетов [REAL_EXCHANGE_UNSPECIFIED, REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
+      gib_realExchange : string;                                                                                // Реальная площадка исполнения расчетов [REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
       gib_positionUid : string;                                                                                 // Уникальный идентификатор позиции инструмента
       gib_assetUid : string;                                                                                    // Уникальный идентификатор актива
       gib_requiredTests : array of string;                                                                      // Тесты, которые необходимо пройти клиенту, чтобы совершать сделки по инструменту
@@ -1071,21 +1091,21 @@ type
       gib_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gib_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gib_error_description : int64;                                                                            // Код ошибки
+      gib_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
    
    // Структуры для процедуры GetClosePrices
    gcp_instrumentIdStruct = record
-      gcp_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение figi или instrument_uid
+      gcp_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение instrument_uid
    end;
 
    gcp_request = record                                                                                         // Запрос для GetClosePrices
       gcp_token : string;                                                                                       // Токен
       gcp_instruments : array of gcp_instrumentIdStruct;                                                        // Массив по инструментам
-      gcp_instrumentStatus : string;                                                                            // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_UNSPECIFIED, INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
+      gcp_instrumentStatus : string;                                                                            // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
    end;
 
    gcp_closePricesStruct = record
-      gcp_figi : string;                                                                                        // FIGI инструмента
       gcp_instrumentUid : string;                                                                               // UID инструмента
       gcp_price : double;                                                                                       // Цена основной сессии
       gcp_eveningSessionPrice : double;                                                                         // Цена вечерней сессии
@@ -1097,25 +1117,25 @@ type
       gcp_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gcp_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gcp_error_description : int64;                                                                            // Код ошибки
+      gcp_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetLastPrices
    glp_instrumentIdStruct = record
-      glp_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение figi или instrument_uid
+      glp_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение instrument_uid
    end;
 
    glp_request = record                                                                                         // Запрос для GetLastPrices
       glp_token : string;                                                                                       // Токен
       glp_instruments : array of glp_instrumentIdStruct;                                                        // Массив по инструментам
-      glp_lastPriceType : string;                                                                               // Тип последней цены [LAST_PRICE_UNSPECIFIED, LAST_PRICE_EXCHANGE, LAST_PRICE_DEALER]
+      glp_lastPriceType : string;                                                                               // Тип последней цены [LAST_PRICE_EXCHANGE, LAST_PRICE_DEALER]
       glp_instrumentStatus : string;                                                                            // Статус запрашиваемых инструментов
    end;
 
    glp_lastPricesStruct = record
-      glp_figi : string;                                                                                        // FIGI инструмента
       glp_instrumentUid : string;                                                                               // UID инструмента
       glp_price : double;                                                                                       // Цена основной сессии
-      glp_lastPriceType : string;                                                                               // Тип последней цены [LAST_PRICE_UNSPECIFIED, LAST_PRICE_EXCHANGE, LAST_PRICE_DEALER]
+      glp_lastPriceType : string;                                                                               // Тип последней цены [LAST_PRICE_EXCHANGE, LAST_PRICE_DEALER]
       glp_time : string;                                                                                        // Дата совершения и время торгов
    end;
 
@@ -1124,6 +1144,7 @@ type
       glp_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       glp_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       glp_error_description : int64;                                                                            // Код ошибки
+      glp_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetLastTrades
@@ -1131,13 +1152,12 @@ type
       glt_token : string;                                                                                       // Токен
       glt_from : string;                                                                                        // Начало запрашиваемого периода по UTC
       glt_to : string;                                                                                          // Окончание запрашиваемого периода по UTC
-      glt_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение `figi`, `instrument_uid` или `ticker + '_' + class_code`
-      glt_tradeSource : string;                                                                                 // Типы источников сделок [TRADE_SOURCE_UNSPECIFIED, TRADE_SOURCE_EXCHANGE, TRADE_SOURCE_DEALER, TRADE_SOURCE_ALL]
+      glt_instrumentId : string;                                                                                // Идентификатор инструмента. Принимает значение `instrument_uid` или `ticker + '_' + class_code`
+      glt_tradeSource : string;                                                                                 // Типы источников сделок [TRADE_SOURCE_EXCHANGE, TRADE_SOURCE_DEALER, TRADE_SOURCE_ALL]
    end;
 
    glt_tradesStruct = record
-      glt_figi : string;                                                                                        // FIGI-идентификатор инструмента
-      glt_direction : string;                                                                                   // Направление сделки [TRADE_DIRECTION_UNSPECIFIED, TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL]
+      glt_direction : string;                                                                                   // Направление сделки [TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL]
       glt_price : double;                                                                                       // Цена
       glt_quantity : int64;                                                                                     // Количество лотов
       glt_time : string;                                                                                        // Время сделки в часовом поясе UTC по времени биржи
@@ -1152,6 +1172,7 @@ type
       glt_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       glt_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       glt_error_description : int64;                                                                            // Код ошибки
+      glt_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetInfo
@@ -1169,6 +1190,7 @@ type
       gi_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       gi_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       gi_error_description : int64;                                                                             // Код ошибки
+      gi_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetMarginAttributes
@@ -1187,6 +1209,7 @@ type
       gma_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gma_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gma_error_description : int64;                                                                            // Код ошибки
+      gma_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры CreateFavoriteGroup
@@ -1203,6 +1226,7 @@ type
       cfg_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       cfg_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       cfg_error_description : int64;                                                                            // Код ошибки
+      cfg_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры DeleteFavoriteGroup
@@ -1215,12 +1239,13 @@ type
       dfg_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       dfg_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       dfg_error_description : int64;                                                                            // Код ошибки
+      dfg_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetFavoriteGroups
    gfg_request = record                                                                                         // Запрос для GetFavoriteGroups
       gfg_token : string;                                                                                       // Токен
-      gfg_instrumentId : array of string;                                                                       // Массив идентификаторов инструментов. Принимает значение figi или instrument_uid. Если в группе будет хотя бы один из инструментов массива, то в ответе у группы вернется признак containsInstrument = true
+      gfg_instrumentId : array of string;                                                                       // Массив идентификаторов инструментов. Принимает значение instrument_uid. Если в группе будет хотя бы один из инструментов массива, то в ответе у группы вернется признак containsInstrument = true
       gfg_excludedGroupId : array of string;                                                                    // Массив идентификаторов групп, которые необходимо исключить из ответа
    end;
 
@@ -1237,6 +1262,7 @@ type
       gfg_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gfg_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gfg_error_description : int64;                                                                            // Код ошибки
+      gfg_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetAccruedInterests
@@ -1244,7 +1270,7 @@ type
       gai_token : string;                                                                                       // Токен
       gai_from : string;                                                                                        // Начало запрашиваемого периода по UTC
       gai_to : string;                                                                                          // Окончание запрашиваемого периода по UTC
-      gai_instrumentId : string;                                                                                // Идентификатор инструмента — figi или instrument_uid
+      gai_instrumentId : string;                                                                                // Идентификатор инструмента instrument_uid
    end;
 
    gai_accruedInterestsStruct = record
@@ -1259,6 +1285,7 @@ type
       gai_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gai_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gai_error_description : int64;                                                                            // Код ошибки
+      gai_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры TradingSchedules
@@ -1308,6 +1335,7 @@ type
       ts_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       ts_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       ts_error_description : int64;                                                                             // Код ошибки
+      ts_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetUserTariff
@@ -1333,6 +1361,7 @@ type
       gut_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gut_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gut_error_description : int64;                                                                            // Код ошибки
+      gut_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetBankAccounts
@@ -1353,30 +1382,33 @@ type
       gba_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gba_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gba_error_description : int64;                                                                            // Код ошибки
+      gba_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры PostOrderAsync
    poa_request = record                                                                                         // Запрос для PostOrderAsync
       poa_token : string;                                                                                       // Токен
-      poa_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения Figi или Instrument_uid
+      poa_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения Instrument_uid
       poa_quantity : int64;                                                                                     // Количество лотов
       poa_price : double;                                                                                       // Цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента. Игнорируется для рыночных поручений
-      poa_direction : string;                                                                                   // Направление операции [ORDER_DIRECTION_UNSPECIFIED, ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
+      poa_direction : string;                                                                                   // Направление операции [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       poa_accountId : string;                                                                                   // Номер счета
-      poa_orderType : string;                                                                                   // Тип заявки [ORDER_TYPE_UNSPECIFIED, ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
+      poa_orderType : string;                                                                                   // Тип заявки [ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
       poa_orderId : string;                                                                                     // Идентификатор запроса выставления поручения для целей идемпотентности в формате UID. Максимальная длина 36 символов
-      poa_timeInForce : string;                                                                                 // Алгоритм исполнения поручения, применяется только к лимитной заявке [TIME_IN_FORCE_UNSPECIFIED, TIME_IN_FORCE_DAY, TIME_IN_FORCE_FILL_AND_KILL, TIME_IN_FORCE_FILL_OR_KILL]
-      poa_priceType : string;                                                                                   // Тип цены [PRICE_TYPE_UNSPECIFIED, PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
+      poa_timeInForce : string;                                                                                 // Алгоритм исполнения поручения, применяется только к лимитной заявке [TIME_IN_FORCE_DAY, TIME_IN_FORCE_FILL_AND_KILL, TIME_IN_FORCE_FILL_OR_KILL]
+      poa_priceType : string;                                                                                   // Тип цены [PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
       poa_confirmMarginTrade : boolean;                                                                         // Согласие на выставление заявки, которая может привести к непокрытой позиции, по умолчанию false
+      poa_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
 
    poa_response = record                                                                                        // Ответ для PostOrderAsync
       poa_orderRequestId : string;                                                                              // Идентификатор ключа идемпотентности, переданный клиентом, в формате UID. Максимальная длина 36 символов
-      poa_executionReportStatus : string;                                                                       // Текущий статус заявки [EXECUTION_REPORT_STATUS_UNSPECIFIED, EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
+      poa_executionReportStatus : string;                                                                       // Текущий статус заявки [EXECUTION_REPORT_STATUS_FILL, EXECUTION_REPORT_STATUS_REJECTED, EXECUTION_REPORT_STATUS_CANCELLED, EXECUTION_REPORT_STATUS_NEW, EXECUTION_REPORT_STATUS_PARTIALLYFILL]
       poa_tradeIntentId : string;                                                                               // Идентификатор торгового поручения
       poa_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       poa_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       poa_error_description : int64;                                                                            // Код ошибки
+      poa_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры Currencies
@@ -1393,7 +1425,6 @@ type
    end;
 
    c_instrumentsStruct = record
-      c_figi : string;                                                                                          // FIGI-идентификатор инструмента
       c_ticker : string;                                                                                        // Тикер инструмента
       c_classCode : string;                                                                                     // Класс-код (секция торгов)
       c_isin : string;                                                                                          // ISIN-идентификатор инструмента
@@ -1438,12 +1469,13 @@ type
       c_error_code : int64;                                                                                     // Уникальный идентификатор ошибки
       c_error_message : string;                                                                                 // Пользовательское сообщение об ошибке
       c_error_description : int64;                                                                              // Код ошибки
+      c_x_tracking_id : string;                                                                                 // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры CurrencyBy
    cb_request = record                                                                                          // Запрос для CurrencyBy
       cb_token : string;                                                                                        // Токен
-      cb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_UNSPECIFIED, INSTRUMENT_ID_TYPE_FIGI, INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
+      cb_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
       cb_classCode : string;                                                                                    // Идентификатор class_code. Обязательный, если id_type = ticker
       cb_id : string;                                                                                           // Идентификатор запрашиваемого инструмента
    end;
@@ -1453,6 +1485,7 @@ type
       cb_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       cb_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       cb_error_description : int64;                                                                             // Код ошибки
+      cb_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetBondCoupons
@@ -1460,16 +1493,15 @@ type
       gbc_token : string;                                                                                       // Токен
       gbc_from : string;                                                                                        // Начало запрашиваемого периода по UTC. Фильтрация по coupon_date — дата выплаты купона
       gbc_to : string;                                                                                          // Окончание запрашиваемого периода по UTC. Фильтрация по coupon_date — дата выплаты купона
-      gbc_instrumentId : string;                                                                                // Идентификатор инструмента — figi или instrument_uid
+      gbc_instrumentId : string;                                                                                // Идентификатор инструмента instrument_uid
    end;
 
    gbc_eventsStruct = record
-      gbc_figi : string;                                                                                        // FIGI-идентификатор инструмента
       gbc_couponDate : string;                                                                                  // Дата выплаты купона
       gbc_couponNumber : int64;                                                                                 // Номер купона
       gbc_fixDate : string;                                                                                     // Дата фиксации реестра для выплаты купона — опционально
       gbc_payOneBond : MoneyStruct;                                                                             // Выплата на одну облигацию
-      gbc_couponType : string;                                                                                  // Тип купонов [COUPON_TYPE_UNSPECIFIED, COUPON_TYPE_CONSTANT, COUPON_TYPE_FLOATING, COUPON_TYPE_DISCOUNT, COUPON_TYPE_MORTGAGE, COUPON_TYPE_FIX, COUPON_TYPE_VARIABLE, COUPON_TYPE_OTHER]
+      gbc_couponType : string;                                                                                  // Тип купонов [COUPON_TYPE_CONSTANT, COUPON_TYPE_FLOATING, COUPON_TYPE_DISCOUNT, COUPON_TYPE_MORTGAGE, COUPON_TYPE_FIX, COUPON_TYPE_VARIABLE, COUPON_TYPE_OTHER]
       gbc_couponStartDate : string;                                                                             // Начало купонного периода
       gbc_couponEndDate : string;                                                                               // Окончание купонного периода
       gbc_couponPeriod : int64;                                                                                 // Купонный период в днях
@@ -1480,6 +1512,7 @@ type
       gbc_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gbc_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gbc_error_description : int64;                                                                            // Код ошибки
+      gbc_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetBondEvents
@@ -1487,15 +1520,15 @@ type
       gbe_token : string;                                                                                       // Токен
       gbe_from : string;                                                                                        // Начало запрашиваемого периода по UTC
       gbe_to : string;                                                                                          // Окончание запрашиваемого периода по UTC
-      gbe_instrumentId : string;                                                                                // Идентификатор инструмента — figi или instrument_uid
-      gbe_type : string;                                                                                        // Тип события [EVENT_TYPE_UNSPECIFIED, EVENT_TYPE_CPN, EVENT_TYPE_CALL, EVENT_TYPE_MTY, EVENT_TYPE_CONV]
+      gbe_instrumentId : string;                                                                                // Идентификатор инструмента instrument_uid
+      gbe_type : string;                                                                                        // Тип события [EVENT_TYPE_CPN, EVENT_TYPE_CALL, EVENT_TYPE_MTY, EVENT_TYPE_CONV]
    end;
 
    gbe_eventsStruct = record
       gbe_instrumentId : string;                                                                                // Идентификатор инструмента
       gbe_eventNumber : int64;                                                                                  // Номер события для данного типа события
       gbe_eventDate : string;                                                                                   // Дата события
-      gbe_eventType : string;                                                                                   // Тип события [EVENT_TYPE_UNSPECIFIED, EVENT_TYPE_CPN, EVENT_TYPE_CALL, EVENT_TYPE_MTY, EVENT_TYPE_CONV]
+      gbe_eventType : string;                                                                                   // Тип события [EVENT_TYPE_CPN, EVENT_TYPE_CALL, EVENT_TYPE_MTY, EVENT_TYPE_CONV]
       gbe_eventTotalVol : double;                                                                               // Полное количество бумаг, задействованных в событии
       gbe_fixDate : string;                                                                                     // Дата фиксации владельцев для участия в событии
       gbe_rateDate : string;                                                                                    // Дата определения даты или факта события
@@ -1520,6 +1553,7 @@ type
       gbe_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gbe_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gbe_error_description : int64;                                                                            // Код ошибки
+      gbe_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetAssetFundamentals
@@ -1592,6 +1626,7 @@ type
       gaf_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gaf_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gaf_error_description : int64;                                                                            // Код ошибки
+      gaf_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
 
@@ -1599,7 +1634,7 @@ type
    gas_request = record                                                                                         // Запрос для GetAssets
       gas_token : string;                                                                                       // Токен
       gas_instrumentType : string;                                                                              // Тип инструмента [INSTRUMENT_TYPE_BOND, INSTRUMENT_TYPE_SHARE, INSTRUMENT_TYPE_CURRENCY, INSTRUMENT_TYPE_ETF, INSTRUMENT_TYPE_FUTURES, INSTRUMENT_TYPE_SP, INSTRUMENT_TYPE_OPTION, INSTRUMENT_TYPE_CLEARING_CERTIFICATE, INSTRUMENT_TYPE_INDEX, INSTRUMENT_TYPE_COMMODITY]
-      gas_instrumentStatus : string;                                                                            // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_UNSPECIFIED, INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
+      gas_instrumentStatus : string;                                                                            // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
    end;
 
    gas_linksStruct = record
@@ -1609,7 +1644,6 @@ type
 
    gas_instrumentsStruct = record
       gas_uid : string;                                                                                         // UID-идентификатор инструмента
-      gas_figi : string;                                                                                        // FIGI-идентификатор инструмента
       gas_instrumentType : string;                                                                              // Тип инструмента
       gas_ticker : string;                                                                                      // Тикер инструмента
       gas_classCode : string;                                                                                   // Класс-код (секция торгов)
@@ -1620,7 +1654,7 @@ type
 
    gas_assetsStruct =record
       gas_uid : string;                                                                                         // Уникальный идентификатор актива
-      gas_type : string;                                                                                        // Тип актива [ASSET_TYPE_UNSPECIFIED, ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
+      gas_type : string;                                                                                        // Тип актива [ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
       gas_name : string;                                                                                        // Наименование актива
       gas_instruments : array of gas_instrumentsStruct;                                                         // Массив идентификаторов инструментов
    end;
@@ -1630,6 +1664,7 @@ type
       gas_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gas_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gas_error_description : int64;                                                                            // Код ошибки
+      gas_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetAssetReports
@@ -1645,7 +1680,7 @@ type
       gar_reportDate : string;                                                                                  // Дата публикации отчета
       gar_periodYear : int64;                                                                                   // Год периода отчета
       gar_periodNum : int64;                                                                                    // Номер периода
-      gar_periodType : string;                                                                                  // Тип отчета [PERIOD_TYPE_UNSPECIFIED, PERIOD_TYPE_QUARTER, PERIOD_TYPE_SEMIANNUAL, PERIOD_TYPE_ANNUAL]
+      gar_periodType : string;                                                                                  // Тип отчета [PERIOD_TYPE_QUARTER, PERIOD_TYPE_SEMIANNUAL, PERIOD_TYPE_ANNUAL]
       gar_createdAt : string;                                                                                   // Дата создания записи
    end;
 
@@ -1654,16 +1689,17 @@ type
       gar_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gar_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gar_error_description : int64;                                                                            // Код ошибки
+      gar_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetPositions
    gep_request = record                                                                                         // Запрос для GetPositions
       gep_token : string;                                                                                       // Токен
       gep_accountId : string;                                                                                   // Идентификатор счета пользователя
+      gep_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
 
    gep_securitiesStruct = record
-      gep_figi : string;                                                                                        // FIGI-идентификатор бумаги
       gep_blocked : int64;                                                                                      // Количество бумаг, заблокированных выставленными заявками
       gep_balance : int64;                                                                                      // Текущий незаблокированный баланс
       gep_positionUid : string;                                                                                 // Уникальный идентификатор позиции
@@ -1675,7 +1711,6 @@ type
    end;
 
    gep_futuresStruct = record
-      gep_figi : string;                                                                                        // FIGI-идентификатор фьючерса
       gep_blocked : int64;                                                                                      // Количество бумаг, заблокированных выставленными заявками
       gep_balance : int64;                                                                                      // Текущий незаблокированный баланс
       gep_positionUid : string;                                                                                 // Уникальный идентификатор позиции
@@ -1704,6 +1739,7 @@ type
       gep_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gep_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gep_error_description : int64;                                                                            // Код ошибки
+      gep_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetBrands
@@ -1735,6 +1771,7 @@ type
       gb_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       gb_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       gb_error_description : int64;                                                                             // Код ошибки
+      gb_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetBrandBy
@@ -1755,16 +1792,16 @@ type
       gbb_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gbb_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gbb_error_description : int64;                                                                            // Код ошибки
+      gbb_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetTradingStatuses
    gtss_request = record                                                                                        // Запрос для GetTradingStatuses
       gtss_token : string;                                                                                      // Токен
-      gtss_instrumentId : array of string;                                                                      // Идентификатор инструмента. Принимает значение "figi", "instrument_uid" или "ticker + "_" + class_code"
+      gtss_instrumentId : array of string;                                                                      // Идентификатор инструмента. Принимает значение "instrument_uid" или "ticker + "_" + class_code"
    end;
 
    gtss_tradingStatusesStruct = record
-      gtss_figi : string;                                                                                       // FIGI-идентификатор инструмента
       gtss_tradingStatus : string;                                                                              // Режим торгов инструмента
       gtss_limitOrderAvailableFlag : boolean;                                                                   // Признак доступности выставления лимитной заявки по инструменту
       gtss_marketOrderAvailableFlag : boolean;                                                                  // Признак доступности выставления рыночной заявки по инструменту
@@ -1781,6 +1818,7 @@ type
       gtss_error_code : int64;                                                                                  // Уникальный идентификатор ошибки
       gtss_error_message : string;                                                                              // Пользовательское сообщение об ошибке
       gtss_error_description : int64;                                                                           // Код ошибки
+      gtss_x_tracking_id : string;                                                                              // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetStrategies
@@ -1794,7 +1832,7 @@ type
       ges_strategyName : string;                                                                                // Название стратегии
       ges_strategyDescription : string;                                                                         // Описание стратегии
       ges_strategyendpoint_url : string;                                                                        // Ссылка на страницу с описанием стратегии
-      ges_strategyType : string;                                                                                // Тип стратегии [STRATEGY_TYPE_UNSPECIFIED, STRATEGY_TYPE_TECHNICAL, STRATEGY_TYPE_FUNDAMENTAL]
+      ges_strategyType : string;                                                                                // Тип стратегии [STRATEGY_TYPE_TECHNICAL, STRATEGY_TYPE_FUNDAMENTAL]
       ges_activeSignals : int64;                                                                                // Количество активных сигналов
       ges_totalSignals : int64;                                                                                 // Общее количество сигналов
       ges_timeInPosition : int64;                                                                               // Среднее время нахождения сигнала в позиции
@@ -1809,6 +1847,7 @@ type
       ges_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       ges_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       ges_error_description : int64;                                                                            // Код ошибки
+      ges_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetSignals
@@ -1822,12 +1861,12 @@ type
       gsi_token : string;                                                                                       // Токен
       gsi_signalId : string;                                                                                    // Идентификатор сигнала
       gsi_strategyId : string;                                                                                  // Идентификатор стратегии
-      gsi_strategyType : string;                                                                                // Тип стратегии [STRATEGY_TYPE_UNSPECIFIED, STRATEGY_TYPE_TECHNICAL, STRATEGY_TYPE_FUNDAMENTAL]
+      gsi_strategyType : string;                                                                                // Тип стратегии [STRATEGY_TYPE_TECHNICAL, STRATEGY_TYPE_FUNDAMENTAL]
       gsi_instrumentUid : string;                                                                               // Идентификатор бумаги
       gsi_from : string;                                                                                        // Дата начала запрашиваемого интервала по UTC
       gsi_to : string;                                                                                          // Дата конца запрашиваемого интервала по UTC
-      gsi_direction : string;                                                                                   // Направление сигнала [SIGNAL_DIRECTION_UNSPECIFIED, SIGNAL_DIRECTION_BUY, SIGNAL_DIRECTION_SELL]
-      gsi_active : string;                                                                                      // Статус сигнала [SIGNAL_STATE_UNSPECIFIED, SIGNAL_STATE_ACTIVE, SIGNAL_STATE_CLOSED, SIGNAL_STATE_ALL]
+      gsi_direction : string;                                                                                   // Направление сигнала [SIGNAL_DIRECTION_BUY, SIGNAL_DIRECTION_SELL]
+      gsi_active : string;                                                                                      // Статус сигнала [SIGNAL_STATE_ACTIVE, SIGNAL_STATE_CLOSED, SIGNAL_STATE_ALL]
       gsi_paging : gsi_pagingStruct;                                                                            // Настройки пагинации
    end;
 
@@ -1837,7 +1876,7 @@ type
       gsi_strategyName : string;                                                                                // Название стратегии
       gsi_instrumentUid : string;                                                                               // Идентификатор бумаги
       gsi_createDt : string;                                                                                    // Дата и время создания сигнала по UTC
-      gsi_direction : string;                                                                                   // Направление сигнала [SIGNAL_DIRECTION_UNSPECIFIED, SIGNAL_DIRECTION_BUY, SIGNAL_DIRECTION_SELL]
+      gsi_direction : string;                                                                                   // Направление сигнала [SIGNAL_DIRECTION_BUY, SIGNAL_DIRECTION_SELL]
       gsi_initialPrice : double;                                                                                // Цена бумаги на момент формирования сигнала
       gsi_info : string;                                                                                        // Дополнительная информация о сигнале
       gsi_name : string;                                                                                        // Название сигнала
@@ -1855,6 +1894,7 @@ type
       gsi_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gsi_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gsi_error_description : int64;                                                                            // Код ошибки
+      gsi_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры CurrencyTransfer
@@ -1870,6 +1910,7 @@ type
       cut_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       cut_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       cut_error_description : int64;                                                                            // Код ошибки
+      cut_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры PayIn
@@ -1884,12 +1925,14 @@ type
       pi_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       pi_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       pi_error_description : int64;                                                                             // Код ошибки
+      pi_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetWithdrawLimits
    gwl_request = record                                                                                         // Запрос для GetWithdrawLimits
       gwl_token : string;                                                                                       // Токен
       gwl_accountId : string;                                                                                   // Идентификатор счета пользователя
+      gwl_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
 
    gwl_response = record                                                                                        // Ответ для GetWithdrawLimits
@@ -1899,6 +1942,7 @@ type
       gwl_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gwl_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gwl_error_description : int64;                                                                            // Код ошибки
+      gwl_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetBrokerReport
@@ -1926,7 +1970,6 @@ type
    gbr_brokerReportStruct = record
       gbr_tradeId : string;                                                                                     // Номер сделки
       gbr_orderId : string;                                                                                     // Номер поручения
-      gbr_figi : string;                                                                                        // FIGI-идентификаторинструмента
       gbr_executeSign : string;                                                                                 // Признак исполнения
       gbr_tradeDatetime : string;                                                                               // Дата и время заключения по UTC
       gbr_exchange : string;                                                                                    // Торговая площадка
@@ -1966,6 +2009,7 @@ type
       gbr_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gbr_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gbr_error_description : int64;                                                                            // Код ошибки
+      gbr_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры Indicatives
@@ -1974,7 +2018,6 @@ type
    end;
 
    ind_instrumentsStruct = record
-      ind_figi : string;                                                                                        // FIGI-идентификатор инструмента
       ind_ticker : string;                                                                                      // Тикер инструмента
       ind_classCode : string;                                                                                   // Класс-код инструмента
       ind_currency : string;                                                                                    // Валюта расчетов
@@ -1991,6 +2034,7 @@ type
       ind_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       ind_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       ind_error_description : int64;                                                                            // Код ошибки
+      ind_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetCountries
@@ -2010,12 +2054,13 @@ type
       gco_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gco_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gco_error_description : int64;                                                                            // Код ошибки
+      gco_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetFuturesMargin
    gfm_request = record                                                                                         // Запрос для GetFuturesMargin
       gfm_token : string;                                                                                       // Токен
-      gfm_instrumentId : string;                                                                                // Идентификатор инструмента — figi или instrument_uid
+      gfm_instrumentId : string;                                                                                // Идентификатор инструмента instrument_uid
    end;
 
    gfm_response = record                                                                                        // Ответ для GetFuturesMargin
@@ -2026,6 +2071,7 @@ type
       gfm_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gfm_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gfm_error_description : int64;                                                                            // Код ошибки
+      gfm_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetForecastBy
@@ -2038,7 +2084,7 @@ type
       gfb_uid : string;                                                                                         // Уникальный идентификатор инструмента
       gfb_ticker : string;                                                                                      // Тикер инструмента
       gfb_company : string;                                                                                     // Название компании, давшей прогноз
-      gfb_recommendation : string;                                                                              // Прогноз [RECOMMENDATION_UNSPECIFIED, RECOMMENDATION_BUY, RECOMMENDATION_HOLD, RECOMMENDATION_SELL]
+      gfb_recommendation : string;                                                                              // Прогноз [RECOMMENDATION_BUY, RECOMMENDATION_HOLD, RECOMMENDATION_SELL]
       gfb_recommendationDate : string;                                                                          // Дата прогноза
       gfb_currency : string;                                                                                    // Валюта
       gfb_currentPrice : double;                                                                                // Текущая цена
@@ -2051,7 +2097,7 @@ type
    gfb_consensusStruct = record
       gfb_uid : string;                                                                                         // Уникальный идентификатор инструмента
       gfb_ticker : string;                                                                                      // Тикер инструмента
-      gfb_recommendation : string;                                                                              // Прогноз [RECOMMENDATION_UNSPECIFIED, RECOMMENDATION_BUY, RECOMMENDATION_HOLD, RECOMMENDATION_SELL]
+      gfb_recommendation : string;                                                                              // Прогноз [RECOMMENDATION_BUY, RECOMMENDATION_HOLD, RECOMMENDATION_SELL]
       gfb_currency : string;                                                                                    // Валюта
       gfb_currentPrice : double;                                                                                // Текущая цена
       gfb_consensus : double;                                                                                   // Прогнозируемая цена
@@ -2067,6 +2113,7 @@ type
       gfb_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gfb_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gfb_error_description : int64;                                                                            // Код ошибки
+      gfb_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetRiskRates
@@ -2094,6 +2141,7 @@ type
       grr_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       grr_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       grr_error_description : int64;                                                                            // Код ошибки
+      grr_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetConsensusForecasts
@@ -2129,29 +2177,29 @@ type
       gcf_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gcf_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gcf_error_description : int64;                                                                            // Код ошибки
+      gcf_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры StructuredNotes
    sn_request = record                                                                                          // Запрос для StructuredNotes
       sn_token : string;                                                                                        // Токен
-      sn_instrumentStatus : string;                                                                             // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_UNSPECIFIED, INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
+      sn_instrumentStatus : string;                                                                             // Статус запрашиваемых инструментов [INSTRUMENT_STATUS_BASE, INSTRUMENT_STATUS_ALL]
       sn_instrumentExchange : string;                                                                           //
    end;
 
    sn_basicAssetsStruct = record
       sn_uid : string;                                                                                          // Уникальный идентификатор базового актива
-      sn_type : string;                                                                                         // Тип актива [ASSET_TYPE_UNSPECIFIED, ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
+      sn_type : string;                                                                                         // Тип актива [ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
       sn_initialPrice : double;                                                                                 // Начальная цена базового актива
    end;
 
    sn_yieldStruct = record
-      sn_type : string;                                                                                         // Тип доходности [YIELD_TYPE_UNSPECIFIED, YIELD_TYPE_GUARANTED_COUPON, YIELD_TYPE_CONDITIONAL_COUPON, YIELD_TYPE_PARTICIPATION]
+      sn_type : string;                                                                                         // Тип доходности [YIELD_TYPE_GUARANTED_COUPON, YIELD_TYPE_CONDITIONAL_COUPON, YIELD_TYPE_PARTICIPATION]
       sn_value : double;                                                                                        // Значение доходности
    end;
 
    sn_instrumentsStruct = record
       sn_uid : string;                                                                                          // Уникальный идентификатор инструмента
-      sn_figi : string;                                                                                         // FIGI-идентификатор инструмента
       sn_ticker : string;                                                                                       // Тикер инструмента
       sn_classCode : string;                                                                                    // Класс-код (секция торгов)
       sn_isin : string;                                                                                         // ISIN-идентификатор инструмента
@@ -2171,7 +2219,7 @@ type
       sn_dshortClient : double;                                                                                 // Ставка риска клиента по инструменту шорт
       sn_shortEnabledFlag : boolean;                                                                            // Признак доступности для операций в шорт
       sn_exchange : string;                                                                                     // Торговая площадка (секция биржи)
-      sn_tradingStatus : string;                                                                                // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_UNSPECIFIED, SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
+      sn_tradingStatus : string;                                                                                // Текущий режим торгов инструмента [SECURITY_TRADING_STATUS_NOT_AVAILABLE_FOR_TRADING, SECURITY_TRADING_STATUS_OPENING_PERIOD, SECURITY_TRADING_STATUS_CLOSING_PERIOD, SECURITY_TRADING_STATUS_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_NORMAL_TRADING, SECURITY_TRADING_STATUS_CLOSING_AUCTION, SECURITY_TRADING_STATUS_DARK_POOL_AUCTION, SECURITY_TRADING_STATUS_DISCRETE_AUCTION, SECURITY_TRADING_STATUS_OPENING_AUCTION_PERIOD, SECURITY_TRADING_STATUS_TRADING_AT_CLOSING_AUCTION_PRICE, SECURITY_TRADING_STATUS_SESSION_ASSIGNED, SECURITY_TRADING_STATUS_SESSION_CLOSE, SECURITY_TRADING_STATUS_SESSION_OPEN, SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING, SECURITY_TRADING_STATUS_DEALER_BREAK_IN_TRADING, SECURITY_TRADING_STATUS_DEALER_NOT_AVAILABLE_FOR_TRADING]
       sn_apiTradeAvailableFlag : boolean;                                                                       // Признак доступности торгов по бумаге через API
       sn_buyAvailableFlag : boolean;                                                                            // Признак доступности для покупки
       sn_sellAvailableFlag : boolean;                                                                           // Признак доступности для продажи
@@ -2183,17 +2231,17 @@ type
       sn_forIisFlag : boolean;                                                                                  // Возможность покупки/продажи на ИИС
       sn_forQualInvestorFlag : boolean;                                                                         // Флаг отображающий доступность торговли инструментом только для квалифицированных инвесторов
       sn_pawnshopListFlag : boolean;                                                                            // Признак ФИ, включенного в ломбардный список
-      sn_realExchange : string;                                                                                 // Реальная площадка исполнения расчетов [REAL_EXCHANGE_UNSPECIFIED, REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
+      sn_realExchange : string;                                                                                 // Реальная площадка исполнения расчетов [REAL_EXCHANGE_MOEX, REAL_EXCHANGE_RTS, REAL_EXCHANGE_OTC, REAL_EXCHANGE_DEALER]
       sn_first1minCandleDate : string;                                                                          // Дата первой минутной свечи
       sn_first1dayCandleDate : string;                                                                          // Дата первой дневной свечи
       sn_borrowName : string;                                                                                   // Название заемщика
       sn_type : string;                                                                                         // Тип структурной ноты
-      sn_logicPortfolio : string;                                                                               // Стратегия портфеля [LOGIC_PORTFOLIO_UNSPECIFIED, LOGIC_PORTFOLIO_VOLATILITY, LOGIC_PORTFOLIO_CORRELATION]
-      sn_assetType : string;                                                                                    // Тип актива [ASSET_TYPE_UNSPECIFIED, ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
+      sn_logicPortfolio : string;                                                                               // Стратегия портфеля [LOGIC_PORTFOLIO_VOLATILITY, LOGIC_PORTFOLIO_CORRELATION]
+      sn_assetType : string;                                                                                    // Тип актива [ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
       sn_basicAssets : array of sn_basicAssetsStruct;                                                           // Базовые активы, входящие в ноту
       sn_safetyBarrier : double;                                                                                // Барьер сохранности (в процентах)
       sn_couponPeriodBase : string;                                                                             // Базис расчета НКД
-      sn_observationPrinciple : string;                                                                         // Принцип наблюдений [OBSERVATION_PRINCIPLE_UNSPECIFIED, OBSERVATION_PRINCIPLE_WORST_BASIC_ASSET, OBSERVATION_PRINCIPLE_BEST_BASIC_ASSET, OBSERVATION_PRINCIPLE_AVERAGE_OF_BASIC_ASSETS, OBSERVATION_PRINCIPLE_SINGLE_BASIC_ASSET_PERFORMANCE]
+      sn_observationPrinciple : string;                                                                         // Принцип наблюдений [OBSERVATION_PRINCIPLE_WORST_BASIC_ASSET, OBSERVATION_PRINCIPLE_BEST_BASIC_ASSET, OBSERVATION_PRINCIPLE_AVERAGE_OF_BASIC_ASSETS, OBSERVATION_PRINCIPLE_SINGLE_BASIC_ASSET_PERFORMANCE]
       sn_observationFrequency : string;                                                                         // Частота наблюдений
       sn_initialPriceFixingDate : string;                                                                       // Дата фиксации цен базовых активов
       sn_yield : array of sn_yieldStruct;                                                                       // Доходность по ноте в годовом выражении
@@ -2210,12 +2258,13 @@ type
       sn_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       sn_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       sn_error_description : int64;                                                                             // Код ошибки
+      sn_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры StructuredNoteBy
    snb_request = record                                                                                         // Запрос для StructuredNoteBy
       snb_token : string;                                                                                       // Токен
-      snb_idType : string;                                                                                      // Тип идентификатора инструмента [INSTRUMENT_ID_UNSPECIFIED, INSTRUMENT_ID_TYPE_FIGI, INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
+      snb_idType : string;                                                                                      // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
       snb_classCode : string;                                                                                   // Идентификатор class_code. Обязательный, если id_type = ticker
       snb_id : string;                                                                                          // Идентификатор запрашиваемого инструмента
    end;
@@ -2226,6 +2275,7 @@ type
       snb_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       snb_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       snb_error_description : int64;                                                                            // Код ошибки
+      snb_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetDividendsForeignIssuer
@@ -2278,6 +2328,7 @@ type
       gdfi_error_code : int64;                                                                                  // Уникальный идентификатор ошибки
       gdfi_error_message : string;                                                                              // Пользовательское сообщение об ошибке
       gdfi_error_description : int64;                                                                           // Код ошибки
+      gdfi_x_tracking_id : string;                                                                              // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры OptionsBy
@@ -2285,7 +2336,7 @@ type
       o_token : string;                                                                                         // Токен
       o_basicAssetUid : string;                                                                                 // Идентификатор базового актива опциона
       o_basicAssetPositionUid : string;                                                                         // Идентификатор позиции базового актива опциона
-      o_basicInstrumentId : string;                                                                             // Идентификатор базового инструмента, принимает значение принимает значения figi, instrument_uid или ticker+"_"+classCode
+      o_basicInstrumentId : string;                                                                             // Идентификатор базового инструмента, принимает значение принимает значения instrument_uid или ticker+"_"+classCode
    end;
 
    o_brandStruct = record
@@ -2305,7 +2356,7 @@ type
       o_direction : string;                                                                                     // Тип опциона по направлению сделки
       o_paymentType : string;                                                                                   // Тип расчетов по опциону
       o_style : string;                                                                                         // Тип опциона по стилю
-      o_settlementType : string;                                                                                // Тип опциона по способу исполнения [OPTION_EXECUTION_TYPE_UNSPECIFIED, OPTION_EXECUTION_TYPE_PHYSICAL_DELIVERY, OPTION_EXECUTION_TYPE_CASH_SETTLEMENT]
+      o_settlementType : string;                                                                                // Тип опциона по способу исполнения [OPTION_EXECUTION_TYPE_PHYSICAL_DELIVERY, OPTION_EXECUTION_TYPE_CASH_SETTLEMENT]
       o_name : string;                                                                                          // Название инструмента
       o_currency : string;                                                                                      // Валюта
       o_settlementCurrency : string;                                                                            // Валюта, в которой оценивается контракт
@@ -2350,12 +2401,13 @@ type
       o_error_code : int64;                                                                                     // Уникальный идентификатор ошибки
       o_error_message : string;                                                                                 // Пользовательское сообщение об ошибке
       o_error_description : int64;                                                                              // Код ошибки
+      o_x_tracking_id : string;                                                                                 // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры OptionBy
    ob_request = record                                                                                          // Запрос для OptionBy
       ob_token : string;                                                                                        // Токен
-      ob_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_UNSPECIFIED, INSTRUMENT_ID_TYPE_FIGI, INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
+      ob_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID]
       ob_classCode : string;                                                                                    // Идентификатор class_code. Обязательный, если id_type = ticker
       ob_id : string;                                                                                           // Идентификатор запрашиваемого инструмента
    end;
@@ -2365,6 +2417,7 @@ type
       ob_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       ob_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       ob_error_description : int64;                                                                             // Код ошибки
+      ob_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetInsiderDeals
@@ -2377,7 +2430,7 @@ type
 
    gid_insiderDealsStruct = record
       gid_tradeId : string;                                                                                     // Уникальный идентификатор сделки
-      gid_direction : string;                                                                                   // Направление сделки [TRADE_DIRECTION_UNSPECIFIED, TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL, TRADE_DIRECTION_INCREASE, TRADE_DIRECTION_DECREASE]
+      gid_direction : string;                                                                                   // Направление сделки [TRADE_DIRECTION_BUY, TRADE_DIRECTION_SELL, TRADE_DIRECTION_INCREASE, TRADE_DIRECTION_DECREASE]
       gid_currency : string;                                                                                    // Валюта сделки
       gid_date : string;                                                                                        // Дата сделки
       gid_quantity : int64;                                                                                     // Количество
@@ -2397,22 +2450,22 @@ type
       gid_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gid_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gid_error_description : int64;                                                                            // Код ошибки
+      gid_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры EditFavorites
    ef_instrumentsStruct = record
-      ef_instrumentId : string;                                                                                 // Идентификатор инструмента — figi или instrument_uid
+      ef_instrumentId : string;                                                                                 // Идентификатор инструмента instrument_uid
    end;
 
    ef_request = record                                                                                          // Запрос для EditFavorites
       ef_token : string;                                                                                        // Токен
       ef_instruments : array of ef_instrumentsStruct;                                                           // Массив инструментов
-      ef_actionType : string;                                                                                   // Тип действия со списком избранных инструментов [EDIT_FAVORITES_ACTION_TYPE_UNSPECIFIED, EDIT_FAVORITES_ACTION_TYPE_ADD, EDIT_FAVORITES_ACTION_TYPE_DEL]
+      ef_actionType : string;                                                                                   // Тип действия со списком избранных инструментов [EDIT_FAVORITES_ACTION_TYPE_ADD, EDIT_FAVORITES_ACTION_TYPE_DEL]
       ef_groupId : string;                                                                                      // Уникальный идентификатор группы
    end;
 
    ef_favoriteInstrumentsStruct = record
-      ef_figi : string;                                                                                         // FIGI-идентификатор инструмента
       ef_ticker : string;                                                                                       // Тикер инструмента
       ef_classCode : string;                                                                                    // Класс-код инструмента
       ef_isin : string;                                                                                         // ISIN-идентификатор инструмента
@@ -2430,6 +2483,7 @@ type
       ef_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       ef_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       ef_error_description : int64;                                                                             // Код ошибки
+      ef_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetFavorites
@@ -2444,6 +2498,7 @@ type
       gf_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       gf_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       gf_error_description : int64;                                                                             // Код ошибки
+      gf_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetAssetBy
@@ -2457,7 +2512,7 @@ type
    end;
 
    gab_shareStruct = record
-      gab_type : string;                                                                                        // Тип акций [SHARE_TYPE_UNSPECIFIED, SHARE_TYPE_COMMON, SHARE_TYPE_PREFERRED, SHARE_TYPE_ADR, SHARE_TYPE_GDR, SHARE_TYPE_MLP, SHARE_TYPE_NY_REG_SHRS, SHARE_TYPE_CLOSED_END_FUND, SHARE_TYPE_REIT]
+      gab_type : string;                                                                                        // Тип акций [SHARE_TYPE_COMMON, SHARE_TYPE_PREFERRED, SHARE_TYPE_ADR, SHARE_TYPE_GDR, SHARE_TYPE_MLP, SHARE_TYPE_NY_REG_SHRS, SHARE_TYPE_CLOSED_END_FUND, SHARE_TYPE_REIT]
       gab_issueSize : double;                                                                                   // Объем выпуска (шт.)
       gab_nominal : double;                                                                                     // Номинал
       gab_nominalCurrency : string;                                                                             // Валюта номинала
@@ -2502,9 +2557,9 @@ type
       gab_borrowName : string;                                                                                  // Наименование заемщика
       gab_nominal : double;                                                                                     // Номинал
       gab_nominalCurrency : string;                                                                             // Валюта номинала
-      gab_type : string;                                                                                        // Тип структурной ноты [SP_TYPE_UNSPECIFIED, SP_TYPE_DELIVERABLE, SP_TYPE_NON_DELIVERABLE]
+      gab_type : string;                                                                                        // Тип структурной ноты [SP_TYPE_DELIVERABLE, SP_TYPE_NON_DELIVERABLE]
       gab_logicPortfolio : string;                                                                              // Стратегия портфеля
-      gab_assetType : string;                                                                                   // Тип актива [ASSET_TYPE_UNSPECIFIED, ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
+      gab_assetType : string;                                                                                   // Тип актива [ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
       gab_basicAsset : string;                                                                                  // Вид базового актива в зависимости от типа базового актива
       gab_safetyBarrier : double;                                                                               // Барьер сохранности в процентах
       gab_maturityDate : string;                                                                                // Дата погашения
@@ -2582,7 +2637,6 @@ type
 
    gab_instrumentsStruct = record
       gab_uid : string;                                                                                         // UID-идентификатор инструмента
-      gab_figi : string;                                                                                        // FIGI-идентификатор инструмента
       gab_instrumentType : string;                                                                              // Тип инструмента
       gab_ticker : string;                                                                                      // Тикер инструмента
       gab_classCode : string;                                                                                   // Класс-код (секция торгов)
@@ -2593,7 +2647,7 @@ type
 
    gab_assetStruct = record
       gab_uid : string;                                                                                         // Уникальный идентификатор актива
-      gab_type : string;                                                                                        // Тип актива [ASSET_TYPE_UNSPECIFIED, ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
+      gab_type : string;                                                                                        // Тип актива [ASSET_TYPE_CURRENCY, ASSET_TYPE_COMMODITY, ASSET_TYPE_INDEX, ASSET_TYPE_SECURITY]
       gab_name : string;                                                                                        // Наименование актива
       gab_nameBrief : string;                                                                                   // Короткое наименование актива
       gab_description : string;                                                                                 // Описание актива
@@ -2617,6 +2671,7 @@ type
       gab_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gab_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gab_error_description : int64;                                                                            // Код ошибки
+      gab_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetDividends
@@ -2624,7 +2679,7 @@ type
       gd_token : string;                                                                                        // Токен
       gd_from : string;                                                                                         // Начало запрашиваемого периода по UTC. Фильтрация происходит по параметру record_date — дата фиксации реестра
       gd_to : string;                                                                                           // Окончание запрашиваемого периода по UTC. Фильтрация происходит по параметру record_date — дата фиксации реестра
-      gd_instrumentId : string;                                                                                 // Идентификатор инструмента — figi или instrument_uid
+      gd_instrumentId : string;                                                                                 // Идентификатор инструмента instrument_uid
    end;
 
    gd_dividendsStruct = record
@@ -2645,63 +2700,14 @@ type
       gd_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
       gd_error_message : string;                                                                                // Пользовательское сообщение об ошибке
       gd_error_description : int64;                                                                             // Код ошибки
-   end;
-
-   // Структуры для процедуры GetOperations
-   geo_request = record                                                                                         // Запрос для GetOperations
-      geo_token : string;                                                                                       // Токен
-      geo_accountId : string;                                                                                   // Идентификатор счета клиента
-      geo_from : string;                                                                                        // Начало периода по UTC
-      geo_to : string;                                                                                          // Окончание периода по UTC
-      geo_state : string;                                                                                       // Статус запрашиваемых операций [OPERATION_STATE_UNSPECIFIED, OPERATION_STATE_EXECUTED, OPERATION_STATE_CANCELED, OPERATION_STATE_PROGRESS]
-      geo_figi : string;                                                                                        // FIGI-идентификатор инструмента для фильтрации (поддерживается UID)
-   end;
-
-   geo_tradesStruct = record
-      geo_tradeId : string;                                                                                     // Идентификатор сделки
-      geo_dateTime : string;                                                                                    // Дата и время сделки по UTC
-      geo_quantity : int64;                                                                                     // Количество инструментов
-      geo_price : MoneyStruct;                                                                                  // Цена за 1 инструмент. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
-   end;
-
-   geo_childOperationsStruct = record
-      geo_instrumentUid : string;                                                                               // Уникальный идентификатор инструмента
-      geo_payment : MoneyStruct;                                                                                // Сумма операции
-   end;
-
-   geo_operationsStruct = record
-      geo_id : string;                                                                                          // Идентификатор операции
-      geo_parentOperationId : string;                                                                           // Идентификатор родительской операции
-      geo_currency : string;                                                                                    // Валюта операции
-      geo_payment : MoneyStruct;                                                                                // Сумма операции
-      geo_price : MoneyStruct;                                                                                  // Цена операции за 1 инструмент. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
-      geo_state : string;                                                                                       // Статус запрашиваемых операций [OPERATION_STATE_UNSPECIFIED, OPERATION_STATE_EXECUTED, OPERATION_STATE_CANCELED, OPERATION_STATE_PROGRESS]
-      geo_quantity : int64;                                                                                     // Количество единиц инструмента
-      geo_quantityRest : int64;                                                                                 // Неисполненный остаток по сделке
-      geo_figi : string;                                                                                        // FIGI-идентификатор инструмента, связанного с операцией
-      geo_instrumentType : string;                                                                              // Тип инструмента
-      geo_date : string;                                                                                        // Дата и время операции в формате часовом поясе UTC
-      geo_type : string;                                                                                        // Текстовое описание типа операции
-      geo_operationType : string;                                                                               // Тип операции
-      geo_trades : array of geo_tradesStruct;                                                                   // Массив сделок
-      geo_assetUid : string;                                                                                    // Идентификатор актива
-      geo_positionUid : string;                                                                                 // Уникальный идентификатор позиции
-      geo_instrumentUid : string;                                                                               // Уникальный идентификатор инструмента
-      geo_childOperations : array of geo_childOperationsStruct;                                                 // Массив дочерних операций
-   end;
-
-   geo_response = record                                                                                        // Ответ для GetOperations
-      geo_operations : array of geo_operationsStruct;                                                           // Массив операций
-      geo_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
-      geo_error_message : string;                                                                               // Пользовательское сообщение об ошибке
-      geo_error_description : int64;                                                                            // Код ошибки
+      gd_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
    end;
 
    // Структуры для процедуры GetMarketValues
    gmv_request = record                                                                                         // Запрос для GetMarketValues
       gmv_token : string;                                                                                       // Токен
-      gmv_instrumentId : array of string;                                                                       // Массив идентификаторов инструментов. Принимает значения figi, instrument_uid или ticker + '_' + class_code
-      gmv_values : array of string;                                                                             // Массив запрашиваемых параметров [INSTRUMENT_VALUE_UNSPECIFIED, INSTRUMENT_VALUE_LAST_PRICE, INSTRUMENT_VALUE_LAST_PRICE_DEALER, INSTRUMENT_VALUE_CLOSE_PRICE, INSTRUMENT_VALUE_EVENING_SESSION_PRICE, INSTRUMENT_VALUE_OPEN_INTEREST, INSTRUMENT_VALUE_THEOR_PRICE, INSTRUMENT_VALUE_YIELD]
+      gmv_instrumentId : array of string;                                                                       // Массив идентификаторов инструментов. Принимает значения instrument_uid или ticker + '_' + class_code
+      gmv_values : array of string;                                                                             // Массив запрашиваемых параметров [INSTRUMENT_VALUE_LAST_PRICE, INSTRUMENT_VALUE_LAST_PRICE_DEALER, INSTRUMENT_VALUE_CLOSE_PRICE, INSTRUMENT_VALUE_EVENING_SESSION_PRICE, INSTRUMENT_VALUE_OPEN_INTEREST, INSTRUMENT_VALUE_THEOR_PRICE, INSTRUMENT_VALUE_YIELD]
    end;
 
    gmv_valuesStruct = record
@@ -2722,7 +2728,51 @@ type
       gmv_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
       gmv_error_message : string;                                                                               // Пользовательское сообщение об ошибке
       gmv_error_description : int64;                                                                            // Код ошибки
+      gmv_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
+
+   // Структуры для процедуры OpenSandboxAccount
+   osa_request = record                                                                                         // Запрос для OpenSandboxAccount
+      osa_token : string;                                                                                       // Токен
+      osa_name : string;                                                                                        // Название счета
+   end;
+
+   osa_response = record                                                                                        // Ответ для OpenSandboxAccount
+      osa_accountId : string;                                                                                   // Номер счета
+      osa_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
+      osa_error_message : string;                                                                               // Пользовательское сообщение об ошибке
+      osa_error_description : int64;                                                                            // Код ошибки
+      osa_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
+   end;
+
+   // Структуры для процедуры CloseSandboxAccount
+   csa_request = record                                                                                         // Запрос для CloseSandboxAccount
+      csa_token : string;                                                                                       // Токен
+      csa_accountId : string;                                                                                   // Номер счета
+   end;
+
+   csa_response = record                                                                                        // Ответ для CloseSandboxAccount
+      csa_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
+      csa_error_message : string;                                                                               // Пользовательское сообщение об ошибке
+      csa_error_description : int64;                                                                            // Код ошибки
+      csa_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
+   end;
+
+   // Структуры для процедуры SandboxPayIn
+   spi_request = record                                                                                         // Запрос для SandboxPayIn
+      spi_token : string;                                                                                       // Токен
+      spi_accountId : string;                                                                                   // Номер счета
+      spi_amount : MoneyStruct;                                                                                 // Сумма пополнения счета
+   end;
+
+   spi_response = record                                                                                        // Ответ для SandboxPayIn
+      spi_balance : MoneyStruct;                                                                                // Текущий баланс счета
+      spi_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
+      spi_error_message : string;                                                                               // Пользовательское сообщение об ошибке
+      spi_error_description : int64;                                                                            // Код ошибки
+      spi_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
+   end;
+
 
 
 {InstrumentsService}
@@ -2780,7 +2830,6 @@ procedure GetTradingStatuses (gtss_input : gtss_request; out gtss_output : gtss_
 {OperationsService}
 procedure GetBrokerReport (gbr_input : gbr_request; out gbr_output : gbr_response);                             // брокерский отчет
 procedure GetDividendsForeignIssuer (gdfi_input : gdfi_request; out gdfi_output : gdfi_response);               // отчет «Справка о доходах за пределами РФ»
-procedure GetOperations (geo_input : geo_request; out geo_output : geo_response);                               // список операций по счету
 procedure GetOperationsByCursor (gobc_input : gobc_request; out gobc_output : gobc_response);                   // список операций по счету
 procedure GetPortfolio (gp_input : gp_request; out gp_output : gp_response);                                    // портфель по счету
 procedure GetPositions (gep_input : gep_request; out gep_output : gep_response);                                // список позиций по счету
@@ -2814,10 +2863,20 @@ procedure PayIn (pi_input : pi_request; out pi_output : pi_response);           
 procedure GetSignals (gsi_input : gsi_request; out gsi_output : gsi_response);                                  // сигналы
 procedure GetStrategies (ges_input : ges_request; out ges_output : ges_response);                               // стратегии
 
+{SandboxService}
+procedure OpenSandboxAccount (osa_input : osa_request; out osa_output : osa_response);                          // зарегистрировать счет в песочнице
+procedure CloseSandboxAccount (csa_input : csa_request; out csa_output : csa_response);                         // закрыть счет в песочнице
+procedure SandboxPayIn (spi_input : spi_request; out spi_output : spi_response);                                // пополнить счет
+
+
 function UnitsNanoToDouble(int_units, int_nano : int64) : double; inline;
 function ParseHeaders(const HeaderString: string): http_headers;
 
 implementation
+
+const
+   url_prod = 'https://invest-public-api.tbank.ru/rest/tinkoff.public.invest.api.contract.v1.';
+   url_sandbox = 'https://sandbox-invest-public-api.tbank.ru/rest/tinkoff.public.invest.api.contract.v1.';
 
 var
    requests_limit : UnaryLimitation;
@@ -2898,7 +2957,10 @@ begin
 
       if ga_input.ga_status <> '' then json_base.Add('status', ga_input.ga_status);
 
-      endpoint_url := url_tinvest + 'UsersService/GetAccounts';
+      if not ga_input.ga_is_sandbox_flag then
+         endpoint_url := url_prod + 'UsersService/GetAccounts'
+      else
+         endpoint_url := url_sandbox + 'UsersService/GetAccounts';
 
       json_request := json_base.AsJSON;
 
@@ -2907,6 +2969,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + ga_input.ga_token);
 
       Client.AllowRedirect := true;
@@ -2920,12 +2983,12 @@ begin
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      ga_output.ga_x_tracking_id := requests_limit.UsersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
 
          SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
          JSN := GetJSON(json_output_struct);
 
          if JSN.FindPath('description') <> nil then begin
@@ -2948,7 +3011,8 @@ begin
                ga_output.ga_accounts[i].ga_name := JSN.FindPath('accounts[' + inttostr(i) + '].name').AsString;
                ga_output.ga_accounts[i].ga_status := JSN.FindPath('accounts[' + inttostr(i) + '].status').AsString;
                ga_output.ga_accounts[i].ga_openedDate := JSN.FindPath('accounts[' + inttostr(i) + '].openedDate').AsString;
-               ga_output.ga_accounts[i].ga_closedDate := JSN.FindPath('accounts[' + inttostr(i) + '].closedDate').AsString;
+               if JSN.FindPath('accounts[' + inttostr(i) + '].closedDate') <> nil then
+                  ga_output.ga_accounts[i].ga_closedDate := JSN.FindPath('accounts[' + inttostr(i) + '].closedDate').AsString;
                ga_output.ga_accounts[i].ga_accessLevel := JSN.FindPath('accounts[' + inttostr(i) + '].accessLevel').AsString;
                inc(i);
             end;
@@ -2986,7 +3050,11 @@ begin
       if gp_input.gp_accountId <> '' then json_base.Add('accountId', gp_input.gp_accountId);
       if gp_input.gp_currency <> '' then json_base.Add('currency', gp_input.gp_currency);
 
-      endpoint_url := url_tinvest + 'OperationsService/GetPortfolio';
+      if not gp_input.gp_is_sandbox_flag then
+         endpoint_url := url_prod + 'OperationsService/GetPortfolio'
+      else
+         endpoint_url := url_sandbox + 'OperationsService/GetPortfolio';
+
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -2994,6 +3062,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gp_input.gp_token);
 
       Client.AllowRedirect := true;
@@ -3007,6 +3076,7 @@ begin
       end;
 
       requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gp_output.gp_x_tracking_id := requests_limit.OperationsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -3056,7 +3126,6 @@ begin
             SetLength(gp_output.gp_virtualPositions, vir_pos_count);
 
             while i < pos_count do  begin
-               gp_output.gp_positions[i].gp_figi := JSN.FindPath('positions[' + inttostr(i) + '].figi').AsString;
                gp_output.gp_positions[i].gp_instrumentType := JSN.FindPath('positions[' + inttostr(i) + '].instrumentType').AsString;
                gp_output.gp_positions[i].gp_quantity := JSN.FindPath('positions[' + inttostr(i) + '].quantity.units').AsInt64;
                gp_output.gp_positions[i].gp_averagePositionPrice.moneyval := UnitsNanoToDouble(JSN.FindPath('positions[' + inttostr(i) + '].averagePositionPrice.units').AsInt64 , JSN.FindPath('positions[' + inttostr(i) + '].averagePositionPrice.nano').AsInt64);
@@ -3088,7 +3157,6 @@ begin
             while j < vir_pos_count do  begin
                gp_output.gp_virtualPositions[j].gp_positionUid := JSN.FindPath('virtualPositions[' + inttostr(j) + '].positionUid').AsString;
                gp_output.gp_virtualPositions[j].gp_instrumentUid := JSN.FindPath('virtualPositions[' + inttostr(j) + '].instrumentUid').AsString;
-               gp_output.gp_virtualPositions[j].gp_figi := JSN.FindPath('virtualPositions[' + inttostr(j) + '].figi').AsString;
                gp_output.gp_virtualPositions[j].gp_instrumentType := JSN.FindPath('virtualPositions[' + inttostr(j) + '].instrumentType').AsString;
                gp_output.gp_virtualPositions[j].gp_quantity := JSN.FindPath('virtualPositions[' + inttostr(j) + '].quantity.units').AsInt64;
                gp_output.gp_virtualPositions[j].gp_averagePositionPrice := UnitsNanoToDouble(JSN.FindPath('virtualPositions[' + inttostr(j) + '].averagePositionPrice.units').AsInt64 , JSN.FindPath('virtualPositions[' + inttostr(j) + '].averagePositionPrice.nano').AsInt64);
@@ -3152,7 +3220,10 @@ begin
       json_base.Add('withoutTrades', gobc_input.gobc_withoutTrades);
       json_base.Add('withoutOvernights', gobc_input.gobc_withoutTrades);
 
-      endpoint_url := url_tinvest + 'OperationsService/GetOperationsByCursor';
+      if not gobc_input.gobc_is_sandbox_flag then
+         endpoint_url := url_prod + 'OperationsService/GetOperationsByCursor'
+      else
+         endpoint_url := url_sandbox + 'OperationsService/GetOperationsByCursor';
 
       json_request := json_base.AsJSON;
 
@@ -3161,6 +3232,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gobc_input.gobc_token);
 
       Client.AllowRedirect := true;
@@ -3174,6 +3246,7 @@ begin
       end;
 
       requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gobc_output.gobc_x_tracking_id := requests_limit.OperationsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -3191,9 +3264,7 @@ begin
          if gobc_output.gobc_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('items'));
             operations_numb := json_output_array.Count;
-
             i := 0;
-
             SetLength(gobc_output.gobc_items, operations_numb +1);
 
             gobc_output.gobc_hasNext := JSN.FindPath('hasNext').AsBoolean;
@@ -3210,7 +3281,6 @@ begin
                gobc_output.gobc_items[i].gobc_description := JSN.FindPath('items[' + inttostr(i) + '].description').AsString;
                gobc_output.gobc_items[i].gobc_state := JSN.FindPath('items[' + inttostr(i) + '].state').AsString;
                gobc_output.gobc_items[i].gobc_instrumentUid := JSN.FindPath('items[' + inttostr(i) + '].instrumentUid').AsString;
-               gobc_output.gobc_items[i].gobc_figi := JSN.FindPath('items[' + inttostr(i) + '].figi').AsString;
                gobc_output.gobc_items[i].gobc_instrumentType := JSN.FindPath('items[' + inttostr(i) + '].instrumentType').AsString;
                gobc_output.gobc_items[i].gobc_instrumentKind := JSN.FindPath('items[' + inttostr(i) + '].instrumentKind').AsString;
                gobc_output.gobc_items[i].gobc_positionUid := JSN.FindPath('items[' + inttostr(i) + '].positionUid').AsString;
@@ -3304,7 +3374,7 @@ begin
       if b_input.b_instrumentStatus <> '' then json_base.Add('instrumentStatus', b_input.b_instrumentStatus);
       if b_input.b_instrumentExchange <> '' then json_base.Add('instrumentExchange', b_input.b_instrumentExchange);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/Bonds';
+      endpoint_url := url_prod + 'InstrumentsService/Bonds';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -3312,6 +3382,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + b_input.b_token);
 
       Client.AllowRedirect := true;
@@ -3325,6 +3396,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      b_output.b_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -3341,15 +3413,11 @@ begin
 
          if b_output.b_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
-
             bonds_count := json_output_array.Count;
-
             SetLength(b_output.b_instruments, bonds_count);
-
             i := 0;
 
             while i < bonds_count do  begin
-               b_output.b_instruments[i].b_figi := JSN.FindPath('instruments[' + inttostr(i) + '].figi').AsString;
                b_output.b_instruments[i].b_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
                b_output.b_instruments[i].b_classCode := JSN.FindPath('instruments[' + inttostr(i) + '].classCode').AsString;
                b_output.b_instruments[i].b_isin := JSN.FindPath('instruments[' + inttostr(i) + '].isin').AsString;
@@ -3472,7 +3540,7 @@ begin
       if s_input.s_instrumentStatus <> '' then json_base.Add('instrumentStatus', s_input.s_instrumentStatus);
       if s_input.s_instrumentExchange <> '' then json_base.Add('instrumentExchange', s_input.s_instrumentExchange);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/Shares';
+      endpoint_url := url_prod + 'InstrumentsService/Shares';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -3480,6 +3548,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + s_input.s_token);
 
       Client.AllowRedirect := true;
@@ -3493,6 +3562,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      s_output.s_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -3509,15 +3579,11 @@ begin
 
          if s_output.s_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
-
             shares_count := json_output_array.Count;
-
             SetLength(s_output.s_instruments, shares_count);
-
             i := 0;
 
             while i < shares_count do  begin
-               s_output.s_instruments[i].s_figi := JSN.FindPath('instruments[' + inttostr(i) + '].figi').AsString;
                s_output.s_instruments[i].s_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
                s_output.s_instruments[i].s_classCode := JSN.FindPath('instruments[' + inttostr(i) + '].classCode').AsString;
                s_output.s_instruments[i].s_isin := JSN.FindPath('instruments[' + inttostr(i) + '].isin').AsString;
@@ -3625,7 +3691,7 @@ begin
       if f_input.f_instrumentStatus <> '' then json_base.Add('instrumentStatus', f_input.f_instrumentStatus);
       if f_input.f_instrumentExchange <> '' then json_base.Add('instrumentExchange', f_input.f_instrumentExchange);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/Futures';
+      endpoint_url := url_prod + 'InstrumentsService/Futures';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -3633,6 +3699,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + f_input.f_token);
 
       Client.AllowRedirect := true;
@@ -3646,6 +3713,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      f_output.f_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -3662,14 +3730,11 @@ begin
 
          if f_output.f_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
-
             futures_count := json_output_array.Count;
             SetLength(f_output.f_instruments, futures_count);
-
             i := 0;
 
             while i < futures_count do  begin
-               f_output.f_instruments[i].f_figi := JSN.FindPath('instruments[' + inttostr(i) + '].figi').AsString;
                f_output.f_instruments[i].f_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
                f_output.f_instruments[i].f_classCode := JSN.FindPath('instruments[' + inttostr(i) + '].classCode').AsString;
                f_output.f_instruments[i].f_lot := JSN.FindPath('instruments[' + inttostr(i) + '].lot').AsInt64;
@@ -3781,7 +3846,7 @@ begin
       if e_input.e_instrumentStatus <> '' then json_base.Add('instrumentStatus', e_input.e_instrumentStatus);
       if e_input.e_instrumentExchange <> '' then json_base.Add('instrumentExchange', e_input.e_instrumentExchange);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/Etfs';
+      endpoint_url := url_prod + 'InstrumentsService/Etfs';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -3789,6 +3854,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + e_input.e_token);
 
       Client.AllowRedirect := true;
@@ -3802,6 +3868,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      e_output.e_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -3818,14 +3885,11 @@ begin
 
          if e_output.e_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
-
             etfs_count := json_output_array.Count;
             SetLength(e_output.e_instruments, etfs_count);
-
             i := 0;
 
             while i < etfs_count do  begin
-               e_output.e_instruments[i].e_figi := JSN.FindPath('instruments[' + inttostr(i) + '].figi').AsString;
                e_output.e_instruments[i].e_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
                e_output.e_instruments[i].e_classCode := JSN.FindPath('instruments[' + inttostr(i) + '].classCode').AsString;
                e_output.e_instruments[i].e_isin := JSN.FindPath('instruments[' + inttostr(i) + '].isin').AsString;
@@ -3932,7 +3996,7 @@ begin
       if fi_input.fi_instrumentKind <> '' then json_base.Add('instrumentKind', fi_input.fi_instrumentKind);
       json_base.Add('apiTradeAvailableFlag', fi_input.fi_apiTradeAvailableFlag);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/FindInstrument';
+      endpoint_url := url_prod + 'InstrumentsService/FindInstrument';
 
       json_request := json_base.AsJSON;
 
@@ -3941,6 +4005,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + fi_input.fi_token);
 
       Client.AllowRedirect := true;
@@ -3954,6 +4019,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      fi_output.fi_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -3970,15 +4036,12 @@ begin
 
          if fi_output.fi_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
-
             instruments_count := json_output_array.Count;
             SetLength(fi_output.fi_instruments, instruments_count);
-
             i := 0;
 
             while i < instruments_count do  begin
                fi_output.fi_instruments[i].fi_isin := JSN.FindPath('instruments[' + inttostr(i) + '].isin').AsString;
-               fi_output.fi_instruments[i].fi_figi := JSN.FindPath('instruments[' + inttostr(i) + '].figi').AsString;
                fi_output.fi_instruments[i].fi_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
                fi_output.fi_instruments[i].fi_classCode := JSN.FindPath('instruments[' + inttostr(i) + '].classCode').AsString;
                fi_output.fi_instruments[i].fi_instrumentType := JSN.FindPath('instruments[' + inttostr(i) + '].instrumentType').AsString;
@@ -3994,7 +4057,6 @@ begin
                fi_output.fi_instruments[i].fi_weekendFlag := JSN.FindPath('instruments[' + inttostr(i) + '].weekendFlag').AsBoolean;
                fi_output.fi_instruments[i].fi_blockedTcaFlag := JSN.FindPath('instruments[' + inttostr(i) + '].blockedTcaFlag').AsBoolean;
                fi_output.fi_instruments[i].fi_lot := JSN.FindPath('instruments[' + inttostr(i) + '].lot').AsInt64;
-
                inc(i);
             end;
          end;
@@ -4032,7 +4094,7 @@ begin
       if bb_input.bb_classCode <> '' then json_base.Add('classCode', bb_input.bb_classCode);
       if bb_input.bb_id <> '' then json_base.Add('id', bb_input.bb_id);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/BondBy';
+      endpoint_url := url_prod + 'InstrumentsService/BondBy';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -4040,6 +4102,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + bb_input.bb_token);
 
       Client.AllowRedirect := true;
@@ -4053,6 +4116,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      bb_output.bb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -4068,8 +4132,6 @@ begin
          end;
 
          if bb_output.bb_error_description = 0 then begin
-
-            bb_output.bb_instrument.b_figi := JSN.FindPath('instrument.figi').AsString;
             bb_output.bb_instrument.b_ticker := JSN.FindPath('instrument.ticker').AsString;
             bb_output.bb_instrument.b_classCode := JSN.FindPath('instrument.classCode').AsString;
             bb_output.bb_instrument.b_isin := JSN.FindPath('instrument.isin').AsString;
@@ -4191,7 +4253,7 @@ begin
       if eb_input.eb_classCode <> '' then json_base.Add('classCode', eb_input.eb_classCode);
       if eb_input.eb_id <> '' then json_base.Add('id', eb_input.eb_id);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/EtfBy';
+      endpoint_url := url_prod + 'InstrumentsService/EtfBy';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -4199,6 +4261,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + eb_input.eb_token);
 
       Client.AllowRedirect := true;
@@ -4212,6 +4275,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      eb_output.eb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -4227,8 +4291,6 @@ begin
          end;
 
          if eb_output.eb_error_description = 0 then begin
-
-            eb_output.eb_instrument.e_figi := JSN.FindPath('instrument.figi').AsString;
             eb_output.eb_instrument.e_ticker := JSN.FindPath('instrument.ticker').AsString;
             eb_output.eb_instrument.e_classCode := JSN.FindPath('instrument.classCode').AsString;
             eb_output.eb_instrument.e_isin := JSN.FindPath('instrument.isin').AsString;
@@ -4333,7 +4395,7 @@ begin
       if fb_input.fb_classCode <> '' then json_base.Add('classCode', fb_input.fb_classCode);
       if fb_input.fb_id <> '' then json_base.Add('id', fb_input.fb_id);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/FutureBy';
+      endpoint_url := url_prod + 'InstrumentsService/FutureBy';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -4341,6 +4403,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + fb_input.fb_token);
 
       Client.AllowRedirect := true;
@@ -4354,6 +4417,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      fb_output.fb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -4369,8 +4433,6 @@ begin
          end;
 
          if fb_output.fb_error_description = 0 then begin
-
-            fb_output.fb_instrument.f_figi := JSN.FindPath('instrument.figi').AsString;
             fb_output.fb_instrument.f_ticker := JSN.FindPath('instrument.ticker').AsString;
             fb_output.fb_instrument.f_classCode := JSN.FindPath('instrument.classCode').AsString;
             fb_output.fb_instrument.f_lot := JSN.FindPath('instrument.lot').AsInt64;
@@ -4480,7 +4542,7 @@ begin
       if sb_input.sb_classCode <> '' then json_base.Add('classCode', sb_input.sb_classCode);
       if sb_input.sb_id <> '' then json_base.Add('id', sb_input.sb_id);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/ShareBy';
+      endpoint_url := url_prod + 'InstrumentsService/ShareBy';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -4488,6 +4550,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + sb_input.sb_token);
 
       Client.AllowRedirect := true;
@@ -4501,6 +4564,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      sb_output.sb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -4516,8 +4580,6 @@ begin
          end;
 
          if sb_output.sb_error_description = 0 then begin
-
-            sb_output.sb_instrument.s_figi := JSN.FindPath('instrument.figi').AsString;
             sb_output.sb_instrument.s_ticker := JSN.FindPath('instrument.ticker').AsString;
             sb_output.sb_instrument.s_classCode := JSN.FindPath('instrument.classCode').AsString;
             sb_output.sb_instrument.s_isin := JSN.FindPath('instrument.isin').AsString;
@@ -4623,7 +4685,7 @@ begin
       if gib_input.gib_classCode <> '' then json_base.Add('classCode', gib_input.gib_classCode);
       if gib_input.gib_id <> '' then json_base.Add('id', gib_input.gib_id);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetInstrumentBy';
+      endpoint_url := url_prod + 'InstrumentsService/GetInstrumentBy';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -4631,6 +4693,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gib_input.gib_token);
 
       Client.AllowRedirect := true;
@@ -4644,6 +4707,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gib_output.gib_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -4659,8 +4723,6 @@ begin
          end;
 
          if gib_output.gib_error_description = 0 then begin
-
-            gib_output.gib_instrument.gib_figi := JSN.FindPath('instrument.figi').AsString;
             gib_output.gib_instrument.gib_ticker := JSN.FindPath('instrument.ticker').AsString;
             gib_output.gib_instrument.gib_classCode := JSN.FindPath('instrument.classCode').AsString;
             gib_output.gib_instrument.gib_isin := JSN.FindPath('instrument.isin').AsString;
@@ -4758,7 +4820,7 @@ begin
       if gc_input.gc_candleSourceType <> '' then json_base.Add('candleSourceType', gc_input.gc_candleSourceType);
       if gc_input.gc_limit >0 then json_base.Add('limit', gc_input.gc_limit);
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetCandles';
+      endpoint_url := url_prod + 'MarketDataService/GetCandles';
 
       json_request := json_base.AsJSON;
 
@@ -4767,6 +4829,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gc_input.gc_token);
 
       Client.AllowRedirect := true;
@@ -4780,6 +4843,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gc_output.gc_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -4795,33 +4859,29 @@ begin
          end;
 
          if gc_output.gc_error_description = 0 then begin
-         json_output_array := TJSONArray(JSN.FindPath('candles'));
+            json_output_array := TJSONArray(JSN.FindPath('candles'));
+            candles_count := json_output_array.Count;
+            i := 0;
+            SetLength(gc_output.gc_candles, candles_count);
 
-         candles_count := json_output_array.Count;
-
-         i := 0;
-
-         SetLength(gc_output.gc_candles, candles_count);
-
-         while i < candles_count do  begin
-
-            gc_output.gc_candles[i].gc_open := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].open.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].open.nano').AsInt64);
-            gc_output.gc_candles[i].gc_high := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].high.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].high.nano').AsInt64);
-            gc_output.gc_candles[i].gc_low := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].low.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].low.nano').AsInt64);
-            gc_output.gc_candles[i].gc_close := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].close.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].close.nano').AsInt64);
-            gc_output.gc_candles[i].gc_volume := JSN.FindPath('candles[' + inttostr(i) + '].volume').AsInt64;
-            gc_output.gc_candles[i].gc_time := JSN.FindPath('candles[' + inttostr(i) + '].time').AsString;
-            gc_output.gc_candles[i].gc_isComplete := JSN.FindPath('candles[' + inttostr(i) + '].isComplete').AsBoolean;
-            if JSN.FindPath('candles[' + inttostr(i) + '].candleSource') <> nil then
-               gc_output.gc_candles[i].gc_candleSource := JSN.FindPath('candles[' + inttostr(i) + '].candleSource').AsString;
-            if JSN.FindPath('candles[' + inttostr(i) + '].volumeBuy') <> nil then
-               gc_output.gc_candles[i].gc_volumeBuy := JSN.FindPath('candles[' + inttostr(i) + '].volumeBuy').AsString;
-            if JSN.FindPath('candles[' + inttostr(i) + '].volumeSell') <> nil then
-               gc_output.gc_candles[i].gc_volumeSell := JSN.FindPath('candles[' + inttostr(i) + '].volumeSell').AsString;
-            inc(i);
+            while i < candles_count do  begin
+               gc_output.gc_candles[i].gc_open := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].open.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].open.nano').AsInt64);
+               gc_output.gc_candles[i].gc_high := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].high.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].high.nano').AsInt64);
+               gc_output.gc_candles[i].gc_low := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].low.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].low.nano').AsInt64);
+               gc_output.gc_candles[i].gc_close := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].close.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].close.nano').AsInt64);
+               gc_output.gc_candles[i].gc_volume := JSN.FindPath('candles[' + inttostr(i) + '].volume').AsInt64;
+               gc_output.gc_candles[i].gc_time := JSN.FindPath('candles[' + inttostr(i) + '].time').AsString;
+               gc_output.gc_candles[i].gc_isComplete := JSN.FindPath('candles[' + inttostr(i) + '].isComplete').AsBoolean;
+               if JSN.FindPath('candles[' + inttostr(i) + '].candleSource') <> nil then
+                  gc_output.gc_candles[i].gc_candleSource := JSN.FindPath('candles[' + inttostr(i) + '].candleSource').AsString;
+               if JSN.FindPath('candles[' + inttostr(i) + '].volumeBuy') <> nil then
+                  gc_output.gc_candles[i].gc_volumeBuy := JSN.FindPath('candles[' + inttostr(i) + '].volumeBuy').AsString;
+               if JSN.FindPath('candles[' + inttostr(i) + '].volumeSell') <> nil then
+                  gc_output.gc_candles[i].gc_volumeSell := JSN.FindPath('candles[' + inttostr(i) + '].volumeSell').AsString;
+               inc(i);
+            end;
          end;
       end;
-   end;
    finally
       Client.RequestBody.Free;
       Client.Free;
@@ -4854,7 +4914,7 @@ begin
       if gob_input.gob_depth >0 then json_base.Add('depth', gob_input.gob_depth);
       if gob_input.gob_instrumentId <> '' then json_base.Add('instrumentId', gob_input.gob_instrumentId);
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetOrderBook';
+      endpoint_url := url_prod + 'MarketDataService/GetOrderBook';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -4862,6 +4922,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gob_input.gob_token);
 
       Client.AllowRedirect := true;
@@ -4875,6 +4936,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gob_output.gob_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -4922,7 +4984,6 @@ begin
                inc(i);
             end;
 
-            gob_output.gob_figi := JSN.FindPath('figi').AsString;
             gob_output.gob_depth := JSN.FindPath('depth').AsInt64;
             gob_output.gob_lastPrice := UnitsNanoToDouble(JSN.FindPath('lastPrice.units').AsInt64 , JSN.FindPath('lastPrice.nano').AsInt64);
             if JSN.FindPath('closePrice') <> nil then
@@ -4987,7 +5048,7 @@ begin
          json_base.Add('smoothing', json_nested3);
       end;
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetTechAnalysis';
+      endpoint_url := url_prod + 'MarketDataService/GetTechAnalysis';
 
       json_request := json_base.AsJSON;
 
@@ -4996,6 +5057,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gta_input.gta_token);
 
       Client.AllowRedirect := true;
@@ -5009,6 +5071,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gta_output.gta_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5025,11 +5088,8 @@ begin
 
          if gta_output.gta_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('technicalIndicators'));
-
             indicators_count := json_output_array.Count;
-
             i := 0;
-
             SetLength(gta_output.gta_technicalIndicators, indicators_count);
 
             while i < indicators_count do  begin
@@ -5040,10 +5100,8 @@ begin
                   gta_output.gta_technicalIndicators[i].gta_upperBand := UnitsNanoToDouble(JSN.FindPath('technicalIndicators[' + inttostr(i) + '].upperBand.units').AsInt64 , JSN.FindPath('technicalIndicators[' + inttostr(i) + '].upperBand.nano').AsInt64);
                if JSN.FindPath('technicalIndicators[' + inttostr(i) + '].lowerBand') <> nil then
                   gta_output.gta_technicalIndicators[i].gta_lowerBand := UnitsNanoToDouble(JSN.FindPath('technicalIndicators[' + inttostr(i) + '].lowerBand.units').AsInt64 , JSN.FindPath('technicalIndicators[' + inttostr(i) + '].lowerBand.nano').AsInt64);
-
                if JSN.FindPath('technicalIndicators[' + inttostr(i) + '].signal') <> nil then
                   gta_output.gta_technicalIndicators[i].gta_signal := UnitsNanoToDouble(JSN.FindPath('technicalIndicators[' + inttostr(i) + '].signal.units').AsInt64 , JSN.FindPath('technicalIndicators[' + inttostr(i) + '].signal.nano').AsInt64);
-
                if JSN.FindPath('technicalIndicators[' + inttostr(i) + '].macd') <> nil then
                   gta_output.gta_technicalIndicators[i].gta_macd := UnitsNanoToDouble(JSN.FindPath('technicalIndicators[' + inttostr(i) + '].macd.units').AsInt64 , JSN.FindPath('technicalIndicators[' + inttostr(i) + '].macd.nano').AsInt64);
                inc(i);
@@ -5081,7 +5139,7 @@ begin
       if gts_input.gts_instrumentId <> '' then json_base.Add('instrumentId', gts_input.gts_instrumentId);
 
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetTradingStatus';
+      endpoint_url := url_prod + 'MarketDataService/GetTradingStatus';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -5089,6 +5147,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gts_input.gts_token);
 
       Client.AllowRedirect := true;
@@ -5102,6 +5161,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gts_output.gts_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5117,7 +5177,6 @@ begin
          end;
 
          if gts_output.gts_error_description = 0 then begin
-            gts_output.gts_figi := JSN.FindPath('figi').AsString;
             gts_output.gts_tradingStatus := JSN.FindPath('tradingStatus').AsString;
             gts_output.gts_limitOrderAvailableFlag := JSN.FindPath('limitOrderAvailableFlag').AsBoolean;
             gts_output.gts_marketOrderAvailableFlag := JSN.FindPath('marketOrderAvailableFlag').AsBoolean;
@@ -5158,7 +5217,11 @@ begin
 
       if go_input.go_accountId <> '' then json_base.Add('accountId', go_input.go_accountId);
 
-      endpoint_url := url_tinvest + 'OrdersService/GetOrders';
+      if not go_input.go_is_sandbox_flag then
+         endpoint_url := url_prod + 'OrdersService/GetOrders'
+      else
+         endpoint_url := url_sandbox + 'OrdersService/GetOrders';
+
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -5166,6 +5229,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + go_input.go_token);
 
       Client.AllowRedirect := true;
@@ -5179,6 +5243,7 @@ begin
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      go_output.go_x_tracking_id := requests_limit.OrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5196,9 +5261,7 @@ begin
          if go_output.go_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('orders'));
             orders_count := json_output_array.Count;
-
             i := 0;
-
             SetLength(go_output.go_orders, orders_count);
 
             while i < orders_count do  begin
@@ -5218,7 +5281,6 @@ begin
                go_output.go_orders[i].go_initialCommission.currency := JSN.FindPath('orders[' + inttostr(i) + '].initialCommission.currency').AsString;
                go_output.go_orders[i].go_executedCommission.moneyval := UnitsNanoToDouble(JSN.FindPath('orders[' + inttostr(i) + '].executedCommission.units').AsInt64 , JSN.FindPath('orders[' + inttostr(i) + '].executedCommission.nano').AsInt64);
                go_output.go_orders[i].go_executedCommission.currency := JSN.FindPath('orders[' + inttostr(i) + '].executedCommission.currency').AsString;
-               go_output.go_orders[i].go_figi := JSN.FindPath('orders[' + inttostr(i) + '].figi').AsString;
                go_output.go_orders[i].go_direction := JSN.FindPath('orders[' + inttostr(i) + '].direction').AsString;
                go_output.go_orders[i].go_initialSecurityPrice.moneyval := UnitsNanoToDouble(JSN.FindPath('orders[' + inttostr(i) + '].initialSecurityPrice.units').AsInt64 , JSN.FindPath('orders[' + inttostr(i) + '].initialSecurityPrice.nano').AsInt64);
                go_output.go_orders[i].go_initialSecurityPrice.currency := JSN.FindPath('orders[' + inttostr(i) + '].initialSecurityPrice.currency').AsString;
@@ -5278,7 +5340,7 @@ begin
       json_base := TJSONObject.Create;
       json_input_array := TJSONArray.Create;
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetClosePrices';
+      endpoint_url := url_prod + 'MarketDataService/GetClosePrices';
 
       numb_uids := high(gcp_input.gcp_instruments);
 
@@ -5297,6 +5359,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gcp_input.gcp_token);
 
       Client.AllowRedirect := true;
@@ -5310,6 +5373,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gcp_output.gcp_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5325,14 +5389,11 @@ begin
          end;
 
          if gcp_output.gcp_error_description = 0 then begin
-
             i := 0;
-
             SetLength(gcp_output.gcp_closePrices, numb_uids+1);
 
             while i <= numb_uids do  begin
                if JSN.FindPath('closePrices[' + inttostr(i) + '].figi') <> nil then
-                  gcp_output.gcp_closePrices[i].gcp_figi := JSN.FindPath('closePrices[' + inttostr(i) + '].figi').AsString;
                if JSN.FindPath('closePrices[' + inttostr(i) + '].instrumentUid') <> nil then
                   gcp_output.gcp_closePrices[i].gcp_instrumentUid := JSN.FindPath('closePrices[' + inttostr(i) + '].instrumentUid').AsString;
                if JSN.FindPath('closePrices[' + inttostr(i) + '].price.units') <> nil then
@@ -5376,7 +5437,7 @@ begin
       json_base := TJSONObject.Create;
       json_input_array := TJSONArray.Create;
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetLastPrices';
+      endpoint_url := url_prod + 'MarketDataService/GetLastPrices';
 
       numb_uids := high(glp_input.glp_instruments);
 
@@ -5395,6 +5456,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + glp_input.glp_token);
 
       Client.AllowRedirect := true;
@@ -5408,6 +5470,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      glp_output.glp_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5423,14 +5486,11 @@ begin
          end;
 
          if glp_output.glp_error_description = 0 then begin
-
             i := 0;
-
             SetLength(glp_output.glp_lastPrices, numb_uids+1);
 
             while i <= numb_uids do  begin
                if JSN.FindPath('lastPrices[' + inttostr(i) + '].figi') <> nil then
-                  glp_output.glp_lastPrices[i].glp_figi := JSN.FindPath('lastPrices[' + inttostr(i) + '].figi').AsString;
                if JSN.FindPath('lastPrices[' + inttostr(i) + '].instrumentUid') <> nil then
                   glp_output.glp_lastPrices[i].glp_instrumentUid := JSN.FindPath('lastPrices[' + inttostr(i) + '].instrumentUid').AsString;
                if JSN.FindPath('lastPrices[' + inttostr(i) + '].price.units') <> nil then
@@ -5477,7 +5537,11 @@ begin
       if gos_input.gos_priceType <> '' then json_base.Add('priceType', gos_input.gos_priceType);
       if gos_input.gos_orderIdType <> '' then json_base.Add('orderIdType', gos_input.gos_orderIdType);
 
-      endpoint_url := url_tinvest + 'OrdersService/GetOrderState';
+
+      if not gos_input.gos_is_sandbox_flag then
+         endpoint_url := url_prod + 'OrdersService/GetOrderState'
+      else
+         endpoint_url := url_sandbox + 'OrdersService/GetOrderState';
 
       json_request := json_base.AsJSON;
 
@@ -5486,6 +5550,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gos_input.gos_token);
 
       Client.AllowRedirect := true;
@@ -5499,6 +5564,7 @@ begin
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gos_output.gos_x_tracking_id := requests_limit.OrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5530,7 +5596,6 @@ begin
             gos_output.gos_initialCommission.currency := JSN.FindPath('initialCommission.currency').AsString;
             gos_output.gos_executedCommission.moneyval := UnitsNanoToDouble(JSN.FindPath('executedCommission.units').AsInt64 , JSN.FindPath('executedCommission.nano').AsInt64);
             gos_output.gos_executedCommission.currency := JSN.FindPath('executedCommission.currency').AsString;
-            gos_output.gos_figi := JSN.FindPath('figi').AsString;
             gos_output.gos_direction := JSN.FindPath('direction').AsString;
             gos_output.gos_initialSecurityPrice.moneyval := UnitsNanoToDouble(JSN.FindPath('initialSecurityPrice.units').AsInt64 , JSN.FindPath('initialSecurityPrice.nano').AsInt64);
             gos_output.gos_initialSecurityPrice.currency := JSN.FindPath('initialSecurityPrice.currency').AsString;
@@ -5544,9 +5609,7 @@ begin
 
             json_output_array := TJSONArray(JSN.FindPath('stages'));
             stages_count := json_output_array.Count;
-
             i := 0;
-
             SetLength(gos_output.gos_stages, stages_count);
 
             while i < stages_count do  begin
@@ -5590,7 +5653,11 @@ begin
       json_base.Add('orderId', co_input.co_orderId);
       if co_input.co_orderId <> '' then json_base.Add('orderIdType', co_input.co_orderId);
 
-      endpoint_url := url_tinvest + 'OrdersService/CancelOrder';
+      if not co_input.co_is_sandbox_flag then
+         endpoint_url := url_prod + 'OrdersService/CancelOrder'
+      else
+         endpoint_url := url_sandbox + 'OrdersService/CancelOrder';
+
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -5598,6 +5665,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + co_input.co_token);
 
       Client.AllowRedirect := true;
@@ -5611,6 +5679,7 @@ begin
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      co_output.co_x_tracking_id := requests_limit.OrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5669,7 +5738,11 @@ begin
          json_base.Add('price', json_nested);
       end;
 
-      endpoint_url := url_tinvest + 'OrdersService/GetMaxLots';
+      if not gml_input.gml_is_sandbox_flag then
+         endpoint_url := url_prod + 'OrdersService/GetMaxLots'
+      else
+         endpoint_url := url_sandbox + 'OrdersService/GetMaxLots';
+
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -5677,6 +5750,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gml_input.gml_token);
 
       Client.AllowRedirect := true;
@@ -5690,6 +5764,7 @@ begin
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gml_output.gml_x_tracking_id := requests_limit.OrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5761,7 +5836,10 @@ begin
       if po_input.po_priceType <> '' then json_base.Add('priceType', po_input.po_priceType);
       if po_input.po_confirmMarginTrade <> false then json_base.Add('confirmMarginTrade', po_input.po_confirmMarginTrade);
 
-      endpoint_url := url_tinvest + 'OrdersService/PostOrder';
+      if not po_input.po_is_sandbox_flag then
+         endpoint_url := url_prod + 'OrdersService/PostOrder'
+      else
+         endpoint_url := url_sandbox + 'OrdersService/PostOrder';
 
       json_request := json_base.AsJSON;
 
@@ -5770,6 +5848,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + po_input.po_token);
 
       Client.AllowRedirect := true;
@@ -5783,6 +5862,7 @@ begin
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      po_output.po_x_tracking_id := requests_limit.OrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5822,7 +5902,6 @@ begin
                po_output.po_aciValue.moneyval := UnitsNanoToDouble(JSN.FindPath('aciValue.units').AsInt64 , JSN.FindPath('aciValue.nano').AsInt64);
                po_output.po_aciValue.currency := JSN.FindPath('aciValue.currency').AsString;
             end;
-            po_output.po_figi := JSN.FindPath('figi').AsString;
             po_output.po_direction := JSN.FindPath('direction').AsString;
             po_output.po_initialSecurityPrice.moneyval := UnitsNanoToDouble(JSN.FindPath('initialSecurityPrice.units').AsInt64 , JSN.FindPath('initialSecurityPrice.nano').AsInt64);
             po_output.po_initialSecurityPrice.currency := JSN.FindPath('initialSecurityPrice.currency').AsString;
@@ -5879,7 +5958,10 @@ begin
       if poa_input.poa_priceType <> '' then json_base.Add('priceType', poa_input.poa_priceType);
       if poa_input.poa_confirmMarginTrade <> false then json_base.Add('confirmMarginTrade', poa_input.poa_confirmMarginTrade);
 
-      endpoint_url := url_tinvest + 'OrdersService/PostOrderAsync';
+      if not poa_input.poa_is_sandbox_flag then
+         endpoint_url := url_prod + 'OrdersService/PostOrderAsync'
+      else
+         endpoint_url := url_sandbox + 'OrdersService/PostOrderAsync';
 
       json_request := json_base.AsJSON;
 
@@ -5888,6 +5970,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + poa_input.poa_token);
 
       Client.AllowRedirect := true;
@@ -5901,6 +5984,7 @@ begin
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      poa_output.poa_x_tracking_id := requests_limit.OrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -5957,7 +6041,10 @@ begin
       json_base.Add('price', json_nested);
       json_base.Add('quantity', gop_input.gop_quantity);
 
-      endpoint_url := url_tinvest + 'OrdersService/GetOrderPrice';
+      if not gop_input.gop_is_sandbox_flag then
+         endpoint_url := url_prod + 'OrdersService/GetOrderPrice'
+      else
+         endpoint_url := url_sandbox + 'OrdersService/GetOrderPrice';
 
       json_request := json_base.AsJSON;
 
@@ -5966,6 +6053,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gop_input.gop_token);
 
       Client.AllowRedirect := true;
@@ -5979,6 +6067,7 @@ begin
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gop_output.gop_x_tracking_id := requests_limit.OrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6059,7 +6148,10 @@ begin
       json_base.Add('priceType', ro_input.ro_priceType);
       json_base.Add('confirmMarginTrade', ro_input.ro_confirmMarginTrade);
 
-      endpoint_url := url_tinvest + 'OrdersService/ReplaceOrder';
+      if not ro_input.ro_is_sandbox_flag then
+         endpoint_url := url_prod + 'OrdersService/ReplaceOrder'
+      else
+         endpoint_url := url_sandbox + 'OrdersService/ReplaceOrder';
 
       json_request := json_base.AsJSON;
 
@@ -6068,6 +6160,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + ro_input.ro_token);
 
       Client.AllowRedirect := true;
@@ -6081,6 +6174,7 @@ begin
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      ro_output.ro_x_tracking_id := requests_limit.OrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6120,7 +6214,6 @@ begin
                ro_output.ro_aciValue.moneyval := UnitsNanoToDouble(JSN.FindPath('aciValue.units').AsInt64 , JSN.FindPath('aciValue.nano').AsInt64);
                ro_output.ro_aciValue.currency := JSN.FindPath('aciValue.currency').AsString;
             end;
-            ro_output.ro_figi := JSN.FindPath('figi').AsString;
             ro_output.ro_direction := JSN.FindPath('direction').AsString;
             ro_output.ro_initialSecurityPrice.moneyval := UnitsNanoToDouble(JSN.FindPath('initialSecurityPrice.units').AsInt64 , JSN.FindPath('initialSecurityPrice.nano').AsInt64);
             ro_output.ro_initialSecurityPrice.currency := JSN.FindPath('initialSecurityPrice.currency').AsString;
@@ -6201,13 +6294,17 @@ begin
 
       json_request := json_base.AsJSON;
 
-      endpoint_url := url_tinvest + 'StopOrdersService/PostStopOrder';
+      if not pso_input.pso_is_sandbox_flag then
+         endpoint_url := url_prod + 'StopOrdersService/PostStopOrder'
+      else
+         endpoint_url := url_sandbox + 'StopOrdersService/PostStopOrder';
 
       InitSSLInterface;
       Client := TFPHttpClient.Create(nil);
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + pso_input.pso_token);
 
       Client.AllowRedirect := true;
@@ -6221,6 +6318,7 @@ begin
       end;
 
       requests_limit.StopOrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      pso_output.pso_x_tracking_id := requests_limit.StopOrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6276,7 +6374,10 @@ begin
       if gso_input.gso_from <> '' then json_base.Add('from', gso_input.gso_from);
       if gso_input.gso_to <> '' then json_base.Add('to', gso_input.gso_to);
 
-      endpoint_url := url_tinvest + 'StopOrdersService/GetStopOrders';
+      if not gso_input.gso_is_sandbox_flag then
+         endpoint_url := url_prod + 'StopOrdersService/GetStopOrders'
+      else
+         endpoint_url := url_sandbox + 'StopOrdersService/GetStopOrders';
 
       json_request := json_base.AsJSON;
 
@@ -6285,6 +6386,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gso_input.gso_token);
 
       Client.AllowRedirect := true;
@@ -6298,6 +6400,7 @@ begin
       end;
 
       requests_limit.StopOrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gso_output.gso_x_tracking_id := requests_limit.StopOrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6314,17 +6417,13 @@ begin
 
          if gso_output.gso_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('stopOrders'));
-
             stoporders_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gso_output.gso_stopOrders, stoporders_count);
+            i := 0;
 
             while i < stoporders_count do  begin
                gso_output.gso_stopOrders[i].gso_stopOrderId := JSN.FindPath('stopOrders[' + inttostr(i) + '].stopOrderId').AsString;
                gso_output.gso_stopOrders[i].gso_lotsRequested := JSN.FindPath('stopOrders[' + inttostr(i) + '].lotsRequested').AsInt64;
-               gso_output.gso_stopOrders[i].gso_figi := JSN.FindPath('stopOrders[' + inttostr(i) + '].figi').AsString;
                gso_output.gso_stopOrders[i].gso_direction := JSN.FindPath('stopOrders[' + inttostr(i) + '].direction').AsString;
                gso_output.gso_stopOrders[i].gso_currency := JSN.FindPath('stopOrders[' + inttostr(i) + '].currency').AsString;
                gso_output.gso_stopOrders[i].gso_orderType := JSN.FindPath('stopOrders[' + inttostr(i) + '].orderType').AsString;
@@ -6386,7 +6485,10 @@ begin
       json_base.Add('accountId', cso_input.cso_accountId);
       json_base.Add('stopOrderId', cso_input.cso_stopOrderId);
 
-      endpoint_url := url_tinvest + 'StopOrdersService/CancelStopOrder';
+      if not cso_input.cso_is_sandbox_flag then
+         endpoint_url := url_prod + 'StopOrdersService/CancelStopOrder'
+      else
+         endpoint_url := url_sandbox + 'StopOrdersService/CancelStopOrder';
 
       json_request := json_base.AsJSON;
 
@@ -6395,6 +6497,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + cso_input.cso_token);
 
       Client.AllowRedirect := true;
@@ -6408,6 +6511,7 @@ begin
       end;
 
       requests_limit.StopOrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      cso_output.cso_x_tracking_id := requests_limit.StopOrdersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6460,7 +6564,7 @@ begin
       json_base.Add('instrumentId', glt_input.glt_instrumentId);
       if glt_input.glt_tradeSource <> '' then json_base.Add('tradeSource', glt_input.glt_tradeSource);
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetLastTrades';
+      endpoint_url := url_prod + 'MarketDataService/GetLastTrades';
 
       json_request := json_base.AsJSON;
 
@@ -6469,6 +6573,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + glt_input.glt_token);
 
       Client.AllowRedirect := true;
@@ -6482,6 +6587,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      glt_output.glt_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6497,17 +6603,12 @@ begin
          end;
 
          if glt_output.glt_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('trades'));
-
             trades_count := json_output_array.Count;
-
+            SetLength(glt_output.glt_trades, trades_count);
             i := 0;
 
-            SetLength(glt_output.glt_trades, trades_count);
-
             while i < trades_count do  begin
-               glt_output.glt_trades[i].glt_figi := JSN.FindPath('trades[' + inttostr(i) + '].figi').AsString;
                glt_output.glt_trades[i].glt_direction := JSN.FindPath('trades[' + inttostr(i) + '].direction').AsString;
                glt_output.glt_trades[i].glt_price := UnitsNanoToDouble(JSN.FindPath('trades[' + inttostr(i) + '].price.units').AsInt64 , JSN.FindPath('trades[' + inttostr(i) + '].price.nano').AsInt64);
                glt_output.glt_trades[i].glt_quantity := JSN.FindPath('trades[' + inttostr(i) + '].quantity').AsInt64;
@@ -6546,7 +6647,7 @@ begin
         requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
       end;
 
-      endpoint_url := url_tinvest + 'UsersService/GetInfo';
+      endpoint_url := url_prod + 'UsersService/GetInfo';
 
       json_request := '{}';
 
@@ -6555,6 +6656,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gi_input.gi_token);
 
       Client.AllowRedirect := true;
@@ -6568,6 +6670,7 @@ begin
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gi_output.gi_x_tracking_id := requests_limit.UsersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6590,17 +6693,12 @@ begin
             gi_output.gi_riskLevelCode := JSN.FindPath('riskLevelCode').AsString;
 
             json_output_array := TJSONArray(JSN.FindPath('qualifiedForWorkWith'));
-
             instruments_count := json_output_array.Count;
-
+            SetLength(gi_output.gi_qualifiedForWorkWith, instruments_count);
             i := 0;
 
-            SetLength(gi_output.gi_qualifiedForWorkWith, instruments_count);
-
             while i < instruments_count do  begin
-
                gi_output.gi_qualifiedForWorkWith[i] := JSN.FindPath('qualifiedForWorkWith[' + inttostr(i) + ']').AsString;
-
                inc(i);
             end;
          end;
@@ -6634,7 +6732,7 @@ begin
 
       json_base.Add('accountId', gma_input.gma_accountId);
 
-      endpoint_url := url_tinvest + 'UsersService/GetMarginAttributes';
+      endpoint_url := url_prod + 'UsersService/GetMarginAttributes';
 
       json_request := json_base.AsJSON;
 
@@ -6643,6 +6741,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gma_input.gma_token);
 
       Client.AllowRedirect := true;
@@ -6656,6 +6755,7 @@ begin
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gma_output.gma_x_tracking_id := requests_limit.UsersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6716,7 +6816,7 @@ begin
       json_base.Add('groupColor', cfg_input.cfg_groupColor);
       json_base.Add('note', cfg_input.cfg_note);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/CreateFavoriteGroup';
+      endpoint_url := url_prod + 'InstrumentsService/CreateFavoriteGroup';
 
       json_request := json_base.AsJSON;
 
@@ -6725,6 +6825,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + cfg_input.cfg_token);
 
       Client.AllowRedirect := true;
@@ -6738,6 +6839,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      cfg_output.cfg_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6786,7 +6888,7 @@ begin
       json_base := TJSONObject.Create;
       json_base.Add('groupName', dfg_input.dfg_groupId);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/DeleteFavoriteGroup';
+      endpoint_url := url_prod + 'InstrumentsService/DeleteFavoriteGroup';
 
       json_request := json_base.AsJSON;
 
@@ -6795,6 +6897,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + dfg_input.dfg_token);
 
       Client.AllowRedirect := true;
@@ -6808,6 +6911,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      dfg_output.dfg_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6823,7 +6927,7 @@ begin
          end;
 
          if dfg_output.dfg_error_description = 0 then begin
-            // что сюда добавить?
+            //
          end;
       end;
    finally
@@ -6870,7 +6974,7 @@ begin
       end;
       if excludedGroupId_count > 0 then json_base.Add('excludedGroupId', json_input_array_excludedGroupId);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetFavoriteGroups';
+      endpoint_url := url_prod + 'InstrumentsService/GetFavoriteGroups';
 
       json_request := json_base.AsJSON;
 
@@ -6879,6 +6983,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gfg_input.gfg_token);
 
       Client.AllowRedirect := true;
@@ -6892,6 +6997,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gfg_output.gfg_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6907,14 +7013,10 @@ begin
          end;
 
          if gfg_output.gfg_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('groups'));
-
             groups_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gfg_output.gfg_groups, groups_count);
+            i := 0;
 
             while i < groups_count do  begin
                gfg_output.gfg_groups[i].gfg_groupId := JSN.FindPath('groups[' + inttostr(i) + '].groupId').AsString;
@@ -6960,7 +7062,7 @@ begin
       json_base.Add('to', gai_input.gai_to);
       json_base.Add('instrumentId', gai_input.gai_instrumentId);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetAccruedInterests';
+      endpoint_url := url_prod + 'InstrumentsService/GetAccruedInterests';
 
       json_request := json_base.AsJSON;
 
@@ -6969,6 +7071,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gai_input.gai_token);
 
       Client.AllowRedirect := true;
@@ -6982,6 +7085,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gai_output.gai_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -6997,15 +7101,10 @@ begin
          end;
 
          if gai_output.gai_error_description = 0 then begin
-
-
             json_output_array := TJSONArray(JSN.FindPath('accruedInterests'));
-
             accruedInterests_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gai_output.gai_accruedInterests, accruedInterests_count);
+            i := 0;
 
             while i < accruedInterests_count do  begin
                gai_output.gai_accruedInterests[i].gai_date := JSN.FindPath('accruedInterests[' + inttostr(i) + '].date').AsString;
@@ -7049,7 +7148,7 @@ begin
       if ts_input.ts_from <> '' then json_base.Add('from', ts_input.ts_from);
       if ts_input.ts_to <> '' then json_base.Add('to', ts_input.ts_to);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/TradingSchedules';
+      endpoint_url := url_prod + 'InstrumentsService/TradingSchedules';
 
       json_request := json_base.AsJSON;
 
@@ -7058,6 +7157,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + ts_input.ts_token);
 
       Client.AllowRedirect := true;
@@ -7071,6 +7171,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      ts_output.ts_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -7086,26 +7187,17 @@ begin
          end;
 
          if ts_output.ts_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('exchanges'));
-
             exchanges_count := json_output_array.Count;
-
+            SetLength(ts_output.ts_exchanges, exchanges_count);
             i := 0;
 
-            SetLength(ts_output.ts_exchanges, exchanges_count);
-
             while i < exchanges_count do  begin
-
                ts_output.ts_exchanges[i].ts_exchange := JSN.FindPath('exchanges[' + inttostr(i) + '].exchange').AsString;
-
                json_output_array := TJSONArray(JSN.FindPath('exchanges[' + inttostr(i) + '].days'));
-
                days_count := json_output_array.Count;
-
-               j := 0;
-
                SetLength(ts_output.ts_exchanges[i].ts_days, days_count);
+               j := 0;
 
                while j < days_count do  begin
                   ts_output.ts_exchanges[i].ts_days[j].ts_date := JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].date').AsString;
@@ -7138,19 +7230,16 @@ begin
                      ts_output.ts_exchanges[i].ts_days[j].ts_openingAuctionEndTime := JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].openingAuctionEndTime').AsString;
 
                   json_output_array := TJSONArray(JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].intervals'));
-
                   intervals_count := json_output_array.Count;
-
+                  SetLength(ts_output.ts_exchanges[i].ts_days[j].ts_intervals, intervals_count);
                   k := 0;
 
-                  SetLength(ts_output.ts_exchanges[i].ts_days[j].ts_intervals, intervals_count);
-
-                     while k < intervals_count do  begin
-                        ts_output.ts_exchanges[i].ts_days[j].ts_intervals[k].ts_type := JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].intervals[' + inttostr(k) + '].type').AsString;
-                        ts_output.ts_exchanges[i].ts_days[j].ts_intervals[k].ts_interval.ts_startTs := JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].intervals[' + inttostr(k) + '].interval.startTs').AsString;
-                        ts_output.ts_exchanges[i].ts_days[j].ts_intervals[k].ts_interval.ts_endTs := JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].intervals[' + inttostr(k) + '].interval.endTs').AsString;
-                        inc(k);
-                     end;
+                  while k < intervals_count do  begin
+                     ts_output.ts_exchanges[i].ts_days[j].ts_intervals[k].ts_type := JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].intervals[' + inttostr(k) + '].type').AsString;
+                     ts_output.ts_exchanges[i].ts_days[j].ts_intervals[k].ts_interval.ts_startTs := JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].intervals[' + inttostr(k) + '].interval.startTs').AsString;
+                     ts_output.ts_exchanges[i].ts_days[j].ts_intervals[k].ts_interval.ts_endTs := JSN.FindPath('exchanges[' + inttostr(i) + '].days[' + inttostr(j) + '].intervals[' + inttostr(k) + '].interval.endTs').AsString;
+                     inc(k);
+                  end;
                   inc(j);
                end;
                inc(i);
@@ -7183,7 +7272,7 @@ begin
         requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
       end;
 
-      endpoint_url := url_tinvest + 'UsersService/GetUserTariff';
+      endpoint_url := url_prod + 'UsersService/GetUserTariff';
 
       json_request := '{}';
 
@@ -7192,6 +7281,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gut_input.gut_token);
 
       Client.AllowRedirect := true;
@@ -7205,6 +7295,7 @@ begin
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gut_output.gut_x_tracking_id := requests_limit.UsersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -7222,21 +7313,16 @@ begin
          if gut_output.gut_error_description = 0 then begin
 
             json_output_array := TJSONArray(JSN.FindPath('unaryLimits'));
-
             unaryLimits_count := json_output_array.Count;
-
-            i := 0;
             SetLength(gut_output.gut_unaryLimits, unaryLimits_count);
+            i := 0;
 
             while i < unaryLimits_count do  begin
                gut_output.gut_unaryLimits[i].gut_limitPerMinute := JSN.FindPath('unaryLimits[' + inttostr(i) + '].limitPerMinute').AsInt64;
-
                json_output_array := TJSONArray(JSN.FindPath('unaryLimits[' + inttostr(i) + '].methods'));
-
-               j := 0;
-
                methods_count := json_output_array.Count;
                SetLength(gut_output.gut_unaryLimits[i].gut_methods, methods_count);
+               j := 0;
 
                while j < methods_count do  begin
                   gut_output.gut_unaryLimits[i].gut_methods[j] := JSN.FindPath('unaryLimits[' + inttostr(i) + '].methods[' + inttostr(j) + ']').AsString;
@@ -7245,27 +7331,22 @@ begin
 
                if JSN.FindPath('unaryLimits[' + inttostr(i) + '].limitPerSecond') <> nil then
                   gut_output.gut_unaryLimits[i].gut_limitPerSecond := JSN.FindPath('unaryLimits[' + inttostr(i) + '].limitPerSecond').AsInt64;
-
                inc(i);
             end;
 
             json_output_array := TJSONArray(JSN.FindPath('streamLimits'));
-
             streamLimits_count := json_output_array.Count;
-
-            k := 0;
             SetLength(gut_output.gut_streamLimits, streamLimits_count);
+            k := 0;
 
             while k < streamLimits_count do  begin
                if JSN.FindPath('streamLimits[' + inttostr(k) + '].limit') <> nil then
                   gut_output.gut_streamLimits[k].gut_limit := JSN.FindPath('streamLimits[' + inttostr(k) + '].limit').AsInt64;
 
                json_output_array := TJSONArray(JSN.FindPath('streamLimits[' + inttostr(k) + '].streams'));
-
-               l := 0;
-
                streams_count := json_output_array.Count;
                SetLength(gut_output.gut_streamLimits[k].gut_streams, streams_count);
+               l := 0;
 
                while l < streams_count do  begin
                   gut_output.gut_streamLimits[k].gut_streams[l] := JSN.FindPath('streamLimits[' + inttostr(k) + '].streams[' + inttostr(l) + ']').AsString;
@@ -7273,7 +7354,6 @@ begin
                end;
 
                gut_output.gut_streamLimits[k].gut_open := JSN.FindPath('streamLimits[' + inttostr(k) + '].open').AsInt64;
-
                inc(k);
             end;
          end;
@@ -7303,7 +7383,7 @@ begin
         requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
       end;
 
-      endpoint_url := url_tinvest + 'UsersService/GetBankAccounts';
+      endpoint_url := url_prod + 'UsersService/GetBankAccounts';
 
       json_request := '{}';
 
@@ -7312,6 +7392,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gba_input.gba_token);
 
       Client.AllowRedirect := true;
@@ -7325,6 +7406,7 @@ begin
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gba_output.gba_x_tracking_id := requests_limit.UsersService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -7342,24 +7424,18 @@ begin
          if gba_output.gba_error_description = 0 then begin
 
             json_output_array := TJSONArray(JSN.FindPath('bankAccounts'));
-
             bankAccounts_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gba_output.gba_bankAccounts, bankAccounts_count);
+            i := 0;
 
             while i < bankAccounts_count do  begin
                gba_output.gba_bankAccounts[i].gba_id := JSN.FindPath('bankAccounts[' + inttostr(i) + '].id').AsString;
                gba_output.gba_bankAccounts[i].gba_name := JSN.FindPath('bankAccounts[' + inttostr(i) + '].name').AsString;
 
                json_output_array := TJSONArray(JSN.FindPath('bankAccounts[' + inttostr(i) + '].money'));
-
                money_count := json_output_array.Count;
-
-               j := 0;
-
                SetLength(gba_output.gba_bankAccounts[i].gba_money, money_count);
+               j := 0;
 
                while j < money_count do  begin
                   gba_output.gba_bankAccounts[i].gba_money[j].moneyval := UnitsNanoToDouble(JSN.FindPath('bankAccounts[' + inttostr(i) + '].money[' + inttostr(j) + '].units').AsInt64 , JSN.FindPath('bankAccounts[' + inttostr(i) + '].money[' + inttostr(j) + '].nano').AsInt64);
@@ -7406,7 +7482,7 @@ begin
       if c_input.c_instrumentStatus <> '' then json_base.Add('instrumentStatus', c_input.c_instrumentStatus);
       if c_input.c_instrumentExchange <> '' then json_base.Add('instrumentExchange', c_input.c_instrumentExchange);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/Currencies';
+      endpoint_url := url_prod + 'InstrumentsService/Currencies';
 
       json_request := json_base.AsJSON;
 
@@ -7415,6 +7491,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + c_input.c_token);
 
       Client.AllowRedirect := true;
@@ -7428,6 +7505,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      c_output.c_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -7447,11 +7525,9 @@ begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
             cur_count := json_output_array.Count;
             SetLength(c_output.c_instruments, cur_count);
-
             i := 0;
 
             while i < cur_count do  begin
-               c_output.c_instruments[i].c_figi := JSN.FindPath('instruments[' + inttostr(i) + '].figi').AsString;
                c_output.c_instruments[i].c_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
                c_output.c_instruments[i].c_classCode := JSN.FindPath('instruments[' + inttostr(i) + '].classCode').AsString;
                c_output.c_instruments[i].c_isin := JSN.FindPath('instruments[' + inttostr(i) + '].isin').AsString;
@@ -7490,7 +7566,6 @@ begin
                json_output_array := TJSONArray(JSN.FindPath('instruments[' + inttostr(i) + '].requiredTests'));
                tests_count := json_output_array.Count;
                SetLength(c_output.c_instruments[i].c_requiredTests, tests_count);
-
                j := 0;
 
                while j < tests_count do  begin
@@ -7513,7 +7588,6 @@ begin
                   c_output.c_instruments[i].c_dlongClient := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].dlongClient.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].dlongClient.nano').AsInt64);
                if JSN.FindPath('instruments[' + inttostr(i) + '].dshortClient') <> nil then
                   c_output.c_instruments[i].c_dshortClient := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].dshortClient.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].dshortClient.nano').AsInt64);
-
                inc(i);
             end;
          end;
@@ -7551,7 +7625,7 @@ begin
       if cb_input.cb_idType = 'INSTRUMENT_ID_TYPE_TICKER' then json_base.Add('classCode', cb_input.cb_classCode);
       json_base.Add('id', cb_input.cb_id);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/CurrencyBy';
+      endpoint_url := url_prod + 'InstrumentsService/CurrencyBy';
 
       json_request := json_base.AsJSON;
 
@@ -7560,6 +7634,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + cb_input.cb_token);
 
       Client.AllowRedirect := true;
@@ -7573,6 +7648,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      cb_output.cb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -7588,8 +7664,6 @@ begin
          end;
 
          if cb_output.cb_error_description = 0 then begin
-
-            cb_output.cb_instrument.c_figi := JSN.FindPath('instrument.figi').AsString;
             cb_output.cb_instrument.c_ticker := JSN.FindPath('instrument.ticker').AsString;
             cb_output.cb_instrument.c_classCode := JSN.FindPath('instrument.classCode').AsString;
             cb_output.cb_instrument.c_isin := JSN.FindPath('instrument.isin').AsString;
@@ -7628,7 +7702,6 @@ begin
             json_output_array := TJSONArray(JSN.FindPath('instrument.requiredTests'));
             tests_count := json_output_array.Count;
             SetLength(cb_output.cb_instrument.c_requiredTests, tests_count);
-
             i := 0;
 
             while i < tests_count do  begin
@@ -7651,7 +7724,6 @@ begin
                cb_output.cb_instrument.c_dlongClient := UnitsNanoToDouble(JSN.FindPath('instrument.dlongClient.units').AsInt64 , JSN.FindPath('instrument.dlongClient.nano').AsInt64);
             if JSN.FindPath('instrument.dshortClient') <> nil then
                cb_output.cb_instrument.c_dshortClient := UnitsNanoToDouble(JSN.FindPath('instrument.dshortClient.units').AsInt64 , JSN.FindPath('instrument.dshortClient.nano').AsInt64);
-
          end;
       end;
    finally
@@ -7687,7 +7759,7 @@ begin
       if gbc_input.gbc_to <> '' then json_base.Add('to', gbc_input.gbc_to);
       json_base.Add('instrumentId', gbc_input.gbc_instrumentId);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetBondCoupons';
+      endpoint_url := url_prod + 'InstrumentsService/GetBondCoupons';
 
       json_request := json_base.AsJSON;
 
@@ -7696,6 +7768,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gbc_input.gbc_token);
 
       Client.AllowRedirect := true;
@@ -7709,6 +7782,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gbc_output.gbc_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -7725,14 +7799,11 @@ begin
 
          if gbc_output.gbc_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('events'));
-
             events_count := json_output_array.Count;
             SetLength(gbc_output.gbc_events, events_count);
-
             i := 0;
 
             while i < events_count do  begin
-               gbc_output.gbc_events[i].gbc_figi := JSN.FindPath('events[' + inttostr(i) + '].figi').AsString;
                gbc_output.gbc_events[i].gbc_couponDate := JSN.FindPath('events[' + inttostr(i) + '].couponDate').AsString;
                gbc_output.gbc_events[i].gbc_couponNumber := JSN.FindPath('events[' + inttostr(i) + '].couponNumber').AsInt64;
                gbc_output.gbc_events[i].gbc_fixDate := JSN.FindPath('events[' + inttostr(i) + '].fixDate').AsString;
@@ -7780,7 +7851,7 @@ begin
       if gbe_input.gbe_type <> '' then json_base.Add('type', gbe_input.gbe_type);
       json_base.Add('instrumentId', gbe_input.gbe_instrumentId);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetBondEvents';
+      endpoint_url := url_prod + 'InstrumentsService/GetBondEvents';
 
       json_request := json_base.AsJSON;
 
@@ -7789,6 +7860,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gbe_input.gbe_token);
 
       Client.AllowRedirect := true;
@@ -7802,6 +7874,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gbe_output.gbe_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -7821,7 +7894,6 @@ begin
             json_output_array := TJSONArray(JSN.FindPath('events'));
             events_count := json_output_array.Count;
             SetLength(gbe_output.gbe_events, events_count);
-
             i := 0;
 
             while i < events_count do  begin
@@ -7857,7 +7929,6 @@ begin
                gbe_output.gbe_events[i].gbe_couponPeriod := JSN.FindPath('events[' + inttostr(i) + '].couponPeriod').AsInt64;
                if JSN.FindPath('events[' + inttostr(i) + '].couponInterestRate') <> nil then
                   gbe_output.gbe_events[i].gbe_couponInterestRate := UnitsNanoToDouble(JSN.FindPath('events[' + inttostr(i) + '].couponInterestRate.units').AsInt64 , JSN.FindPath('events[' + inttostr(i) + '].couponInterestRate.nano').AsInt64);
-
                inc(i);
             end;
          end;
@@ -7892,7 +7963,7 @@ begin
       json_base := TJSONObject.Create;
       json_input_array := TJSONArray.Create;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetAssetFundamentals';
+      endpoint_url := url_prod + 'InstrumentsService/GetAssetFundamentals';
 
       numb_assets := high(gaf_input.gaf_assets);
 
@@ -7908,6 +7979,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gaf_input.gaf_token);
 
       Client.AllowRedirect := true;
@@ -7921,6 +7993,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gaf_output.gaf_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -7936,10 +8009,8 @@ begin
          end;
 
          if gaf_output.gaf_error_description = 0 then begin
-
-            i := 0;
-
             SetLength(gaf_output.gaf_fundamentals, numb_assets);
+            i := 0;
 
             while i < numb_assets do  begin
                if JSN.FindPath('fundamentals[' + inttostr(i) + '].assetUid') <> nil then
@@ -8090,7 +8161,7 @@ begin
       if gas_input.gas_instrumentType <> '' then json_base.Add('instrumentType', gas_input.gas_instrumentType);
       if gas_input.gas_instrumentStatus <> '' then json_base.Add('instrumentStatus', gas_input.gas_instrumentStatus);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetAssets';
+      endpoint_url := url_prod + 'InstrumentsService/GetAssets';
 
       json_request := json_base.AsJSON;
 
@@ -8099,6 +8170,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gas_input.gas_token);
 
       Client.AllowRedirect := true;
@@ -8112,6 +8184,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gas_output.gas_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -8127,12 +8200,9 @@ begin
          end;
 
          if gas_output.gas_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('assets'));
             assets_count := json_output_array.Count;
-
             SetLength(gas_output.gas_assets, assets_count);
-
             i := 0;
 
             while i < assets_count do  begin
@@ -8142,23 +8212,18 @@ begin
 
                json_output_array := TJSONArray(JSN.FindPath('assets[' + inttostr(i) + '].instruments' ));
                instruments_count := json_output_array.Count;
-
                SetLength(gas_output.gas_assets[i].gas_instruments, instruments_count);
-
                j := 0;
 
                while j < instruments_count do  begin
                   gas_output.gas_assets[i].gas_instruments[j].gas_uid := JSN.FindPath('assets[' + inttostr(i) + '].instruments[' + inttostr(j) + '].uid').AsString;
-                  gas_output.gas_assets[i].gas_instruments[j].gas_figi := JSN.FindPath('assets[' + inttostr(i) + '].instruments[' + inttostr(j) + '].figi').AsString;
                   gas_output.gas_assets[i].gas_instruments[j].gas_instrumentType := JSN.FindPath('assets[' + inttostr(i) + '].instruments[' + inttostr(j) + '].instrumentType').AsString;
                   gas_output.gas_assets[i].gas_instruments[j].gas_ticker := JSN.FindPath('assets[' + inttostr(i) + '].instruments[' + inttostr(j) + '].ticker').AsString;
                   gas_output.gas_assets[i].gas_instruments[j].gas_classCode := JSN.FindPath('assets[' + inttostr(i) + '].instruments[' + inttostr(j) + '].classCode').AsString;
 
                   json_output_array := TJSONArray(JSN.FindPath('assets[' + inttostr(i) + '].instruments[' + inttostr(j) + '].links'));
                   links_count := json_output_array.Count;
-
                   SetLength(gas_output.gas_assets[i].gas_instruments[j].gas_links, links_count);
-
                   k := 0;
 
                   while k < links_count do  begin
@@ -8208,7 +8273,7 @@ begin
       if gar_input.gar_to <> '' then json_base.Add('to', gar_input.gar_to);
       json_base.Add('instrumentId', gar_input.gar_instrumentId);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetAssetReports';
+      endpoint_url := url_prod + 'InstrumentsService/GetAssetReports';
 
       json_request := json_base.AsJSON;
 
@@ -8217,6 +8282,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gar_input.gar_token);
 
       Client.AllowRedirect := true;
@@ -8230,6 +8296,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gar_output.gar_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -8245,12 +8312,9 @@ begin
          end;
 
          if gar_output.gar_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('events'));
             events_count := json_output_array.Count;
-
             SetLength(gar_output.gar_events, events_count);
-
             i := 0;
 
             while i < events_count do  begin
@@ -8295,7 +8359,10 @@ begin
 
       json_base.Add('accountId', gep_input.gep_accountId);
 
-      endpoint_url := url_tinvest + 'OperationsService/GetPositions';
+      if not gep_input.gep_is_sandbox_flag then
+         endpoint_url := url_prod + 'OperationsService/GetPositions'
+      else
+         endpoint_url := url_sandbox + 'OperationsService/GetPositions';
 
       json_request := json_base.AsJSON;
 
@@ -8304,6 +8371,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gep_input.gep_token);
 
       Client.AllowRedirect := true;
@@ -8317,6 +8385,7 @@ begin
       end;
 
       requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gep_output.gep_x_tracking_id := requests_limit.OperationsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -8332,11 +8401,9 @@ begin
          end;
 
          if gep_output.gep_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('money'));
             money_count := json_output_array.Count;
             SetLength(gep_output.gep_money, money_count);
-
             i := 0;
 
             while i < money_count do begin
@@ -8348,7 +8415,6 @@ begin
             json_output_array := TJSONArray(JSN.FindPath('blocked'));
             blocked_count := json_output_array.Count;
             SetLength(gep_output.gep_blocked, blocked_count);
-
             j := 0;
 
             while j < money_count do begin
@@ -8362,11 +8428,9 @@ begin
             json_output_array := TJSONArray(JSN.FindPath('securities'));
             securities_count := json_output_array.Count;
             SetLength(gep_output.gep_securities, securities_count);
-
             k := 0;
 
             while k < securities_count do begin
-               gep_output.gep_securities[k].gep_figi := JSN.FindPath('securities[' + inttostr(k) + '].figi').AsString;
                gep_output.gep_securities[k].gep_blocked := JSN.FindPath('securities[' + inttostr(k) + '].blocked').AsInt64;
                gep_output.gep_securities[k].gep_balance := JSN.FindPath('securities[' + inttostr(k) + '].balance').AsInt64;
                gep_output.gep_securities[k].gep_positionUid := JSN.FindPath('securities[' + inttostr(k) + '].positionUid').AsString;
@@ -8380,15 +8444,12 @@ begin
 
             gep_output.gep_limitsLoadingInProgress := JSN.FindPath('limitsLoadingInProgress').AsBoolean;
 
-
             json_output_array := TJSONArray(JSN.FindPath('futures'));
             futures_count := json_output_array.Count;
             SetLength(gep_output.gep_futures, futures_count);
-
             l := 0;
 
             while l < futures_count do begin
-               gep_output.gep_futures[l].gep_figi := JSN.FindPath('futures[' + inttostr(l) + '].figi').AsString;
                gep_output.gep_futures[l].gep_blocked := JSN.FindPath('futures[' + inttostr(l) + '].blocked').AsInt64;
                gep_output.gep_futures[l].gep_balance := JSN.FindPath('futures[' + inttostr(l) + '].balance').AsInt64;
                gep_output.gep_futures[l].gep_positionUid := JSN.FindPath('futures[' + inttostr(l) + '].positionUid').AsString;
@@ -8401,7 +8462,6 @@ begin
             json_output_array := TJSONArray(JSN.FindPath('options'));
             options_count := json_output_array.Count;
             SetLength(gep_output.gep_options, options_count);
-
             m := 0;
 
             while m < options_count do begin
@@ -8415,7 +8475,6 @@ begin
             end;
 
             gep_output.gep_accountId := JSN.FindPath('accountId').AsString;
-
          end;
       end;
    finally
@@ -8452,9 +8511,7 @@ begin
       if gb_input.gb_paging.gb_pageNumber >= 0 then json_nested.Add('pageNumber', gb_input.gb_paging.gb_pageNumber);
       json_base.Add('paging', json_nested);
 
-
-
-      endpoint_url := url_tinvest + 'InstrumentsService/GetBrands';
+      endpoint_url := url_prod + 'InstrumentsService/GetBrands';
 
       json_request := json_base.AsJSON;
 
@@ -8463,6 +8520,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gb_input.gb_token);
 
       Client.AllowRedirect := true;
@@ -8476,6 +8534,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gb_output.gb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -8492,12 +8551,9 @@ begin
 
          if gb_output.gb_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('brands'));
-
             brands_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gb_output.gb_brands, brands_count);
+            i := 0;
 
             while i < brands_count do  begin
                gb_output.gb_brands[i].gb_uid := JSN.FindPath('brands[' + inttostr(i) + '].uid').AsString;
@@ -8546,7 +8602,7 @@ begin
 
       json_base.Add('id', gbb_input.gbb_id);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetBrandBy';
+      endpoint_url := url_prod + 'InstrumentsService/GetBrandBy';
 
       json_request := json_base.AsJSON;
 
@@ -8555,6 +8611,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gbb_input.gbb_token);
 
       Client.AllowRedirect := true;
@@ -8568,6 +8625,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gbb_output.gbb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -8624,7 +8682,7 @@ begin
       json_base := TJSONObject.Create;
       json_input_array := TJSONArray.Create;
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetTradingStatuses';
+      endpoint_url := url_prod + 'MarketDataService/GetTradingStatuses';
 
       tradingStatuses_count := high(gtss_input.gtss_instrumentId);
 
@@ -8640,6 +8698,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gtss_input.gtss_token);
 
       Client.AllowRedirect := true;
@@ -8653,6 +8712,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gtss_output.gtss_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -8668,16 +8728,12 @@ begin
          end;
 
          if gtss_output.gtss_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('tradingStatuses'));
             tradingStatuses_count := json_output_array.Count;
-
+            SetLength(gtss_output.gtss_tradingStatuses, tradingStatuses_count);
             i := 0;
 
-            SetLength(gtss_output.gtss_tradingStatuses, tradingStatuses_count);
-
             while i < tradingStatuses_count do  begin
-               gtss_output.gtss_tradingStatuses[i].gtss_figi := JSN.FindPath('tradingStatuses[' + inttostr(i) + '].figi').AsString;
                gtss_output.gtss_tradingStatuses[i].gtss_tradingStatus := JSN.FindPath('tradingStatuses[' + inttostr(i) + '].tradingStatus').AsString;
                gtss_output.gtss_tradingStatuses[i].gtss_limitOrderAvailableFlag := JSN.FindPath('tradingStatuses[' + inttostr(i) + '].limitOrderAvailableFlag').AsBoolean;
                gtss_output.gtss_tradingStatuses[i].gtss_marketOrderAvailableFlag := JSN.FindPath('tradingStatuses[' + inttostr(i) + '].marketOrderAvailableFlag').AsBoolean;
@@ -8720,7 +8776,7 @@ begin
 
       json_base := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'SignalService/GetStrategies';
+      endpoint_url := url_prod + 'SignalService/GetStrategies';
 
       if ges_input.ges_strategyId <> '' then json_base.Add('strategyId', ges_input.ges_strategyId);
 
@@ -8731,6 +8787,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + ges_input.ges_token);
 
       Client.AllowRedirect := true;
@@ -8744,6 +8801,7 @@ begin
       end;
 
       requests_limit.SignalService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      ges_output.ges_x_tracking_id := requests_limit.SignalService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -8759,13 +8817,10 @@ begin
          end;
 
          if ges_output.ges_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('strategies'));
             strategies_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(ges_output.ges_strategies, strategies_count);
+            i := 0;
 
             while i < strategies_count do  begin
                ges_output.ges_strategies[i].ges_strategyId := JSN.FindPath('strategies[' + inttostr(i) + '].strategyId').AsString;
@@ -8814,7 +8869,7 @@ begin
       json_base := TJSONObject.Create;
       json_nested := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'SignalService/GetSignals';
+      endpoint_url := url_prod + 'SignalService/GetSignals';
 
       if gsi_input.gsi_signalId <> '' then json_base.Add('signalId', gsi_input.gsi_signalId);
       if gsi_input.gsi_strategyId <> '' then json_base.Add('strategyId', gsi_input.gsi_strategyId);
@@ -8836,6 +8891,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gsi_input.gsi_token);
 
       Client.AllowRedirect := true;
@@ -8849,6 +8905,7 @@ begin
       end;
 
       requests_limit.SignalService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gsi_output.gsi_x_tracking_id := requests_limit.SignalService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -8864,13 +8921,10 @@ begin
          end;
 
          if gsi_output.gsi_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('signals'));
             signals_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gsi_output.gsi_signals, signals_count);
+            i := 0;
 
             while i < signals_count do  begin
                gsi_output.gsi_signals[i].gsi_signalId := JSN.FindPath('signals[' + inttostr(i) + '].signalId').AsString;
@@ -8897,7 +8951,6 @@ begin
             gsi_output.gsi_paging.gsi_limit := JSN.FindPath('paging.limit').AsInt64;
             gsi_output.gsi_paging.gsi_pageNumber := JSN.FindPath('paging.pageNumber').AsInt64;
             gsi_output.gsi_paging.gsi_totalCount := JSN.FindPath('paging.totalCount').AsInt64;
-
          end;
       end;
    finally
@@ -8929,7 +8982,7 @@ begin
       json_base := TJSONObject.Create;
       json_nested := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'UsersService/CurrencyTransfer';
+      endpoint_url := url_prod + 'UsersService/CurrencyTransfer';
 
       json_base.Add('fromAccountId', cut_input.cut_fromAccountId);
       json_base.Add('toAccountId', cut_input.cut_toAccountId);
@@ -8948,6 +9001,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + cut_input.cut_token);
 
       Client.AllowRedirect := true;
@@ -8961,6 +9015,7 @@ begin
       end;
 
       requests_limit.Currency_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      cut_output.cut_x_tracking_id := requests_limit.Currency_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9008,7 +9063,7 @@ begin
       json_base := TJSONObject.Create;
       json_nested := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'UsersService/PayIn';
+      endpoint_url := url_prod + 'UsersService/PayIn';
 
       json_base.Add('fromAccountId', pi_input.pi_fromAccountId);
       json_base.Add('toAccountId', pi_input.pi_toAccountId);
@@ -9026,6 +9081,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + pi_input.pi_token);
 
       Client.AllowRedirect := true;
@@ -9039,6 +9095,7 @@ begin
       end;
 
       requests_limit.Currency_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      pi_output.pi_x_tracking_id := requests_limit.Currency_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9086,7 +9143,10 @@ begin
 
       json_base := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'OperationsService/GetWithdrawLimits';
+      if not gwl_input.gwl_is_sandbox_flag then
+         endpoint_url := url_prod + 'OperationsService/GetWithdrawLimits'
+      else
+         endpoint_url := url_sandbox + 'OperationsService/GetWithdrawLimits';
 
       json_base.Add('accountId', gwl_input.gwl_accountId);
 
@@ -9097,6 +9157,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gwl_input.gwl_token);
 
       Client.AllowRedirect := true;
@@ -9110,6 +9171,7 @@ begin
       end;
 
       requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gwl_output.gwl_x_tracking_id := requests_limit.OperationsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9125,13 +9187,10 @@ begin
          end;
 
          if gwl_output.gwl_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('money'));
             money_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gwl_output.gwl_money, money_count);
+            i := 0;
 
             while i < money_count do  begin
                gwl_output.gwl_money[i].moneyval := UnitsNanoToDouble(JSN.FindPath('money[' + inttostr(i) + '].units').AsInt64 , JSN.FindPath('money[' + inttostr(i) + '].nano').AsInt64);
@@ -9141,10 +9200,8 @@ begin
 
             json_output_array := TJSONArray(JSN.FindPath('blocked'));
             blocked_count := json_output_array.Count;
-
-            j := 0;
-
             SetLength(gwl_output.gwl_blocked, blocked_count);
+            j := 0;
 
             while j < blocked_count do  begin
                gwl_output.gwl_blocked[j].moneyval := UnitsNanoToDouble(JSN.FindPath('blocked[' + inttostr(j) + '].units').AsInt64 , JSN.FindPath('blocked[' + inttostr(j) + '].nano').AsInt64);
@@ -9154,10 +9211,8 @@ begin
 
             json_output_array := TJSONArray(JSN.FindPath('blockedGuarantee'));
             blockedGuarantee_count := json_output_array.Count;
-
-            k := 0;
-
             SetLength(gwl_output.gwl_blockedGuarantee, blockedGuarantee_count);
+            k := 0;
 
             while k < blockedGuarantee_count do  begin
                gwl_output.gwl_blocked[k].moneyval := UnitsNanoToDouble(JSN.FindPath('blockedGuarantee[' + inttostr(k) + '].units').AsInt64 , JSN.FindPath('blockedGuarantee[' + inttostr(k) + '].nano').AsInt64);
@@ -9196,7 +9251,7 @@ begin
       json_base := TJSONObject.Create;
       json_nested1 := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'OperationsService/GetBrokerReport';
+      endpoint_url := url_prod + 'OperationsService/GetBrokerReport';
 
       json_nested1.Add('accountId', gbr_input.gbr_generateBrokerReportRequest.gbr_accountId);
       json_nested1.Add('from', gbr_input.gbr_generateBrokerReportRequest.gbr_from);
@@ -9217,6 +9272,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gbr_input.gbr_token);
 
       Client.AllowRedirect := true;
@@ -9230,6 +9286,7 @@ begin
       end;
 
       requests_limit.Report_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gbr_output.gbr_x_tracking_id := requests_limit.Report_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9257,13 +9314,11 @@ begin
             end;
 
             i := 0;
-
             SetLength(gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport, brokerReport_count);
 
             while i < brokerReport_count do  begin
                gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport[i].gbr_tradeId := JSN.FindPath('getBrokerReportResponse.brokerReport[' + inttostr(i) + '].tradeId').AsString;
                gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport[i].gbr_orderId := JSN.FindPath('getBrokerReportResponse.brokerReport[' + inttostr(i) + '].orderId').AsString;
-               gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport[i].gbr_figi := JSN.FindPath('getBrokerReportResponse.brokerReport[' + inttostr(i) + '].figi').AsString;
                gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport[i].gbr_executeSign := JSN.FindPath('getBrokerReportResponse.brokerReport[' + inttostr(i) + '].executeSign').AsString;
                gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport[i].gbr_tradeDatetime := JSN.FindPath('getBrokerReportResponse.brokerReport[' + inttostr(i) + '].tradeDatetime').AsString;
                gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport[i].gbr_exchange := JSN.FindPath('getBrokerReportResponse.brokerReport[' + inttostr(i) + '].exchange').AsString;
@@ -9332,7 +9387,7 @@ begin
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/Indicatives';
+      endpoint_url := url_prod + 'InstrumentsService/Indicatives';
 
       json_request := '{}';
 
@@ -9341,6 +9396,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + ind_input.ind_token);
 
       Client.AllowRedirect := true;
@@ -9354,6 +9410,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      ind_output.ind_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9370,15 +9427,11 @@ begin
 
          if ind_output.ind_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
-
             instruments_count := json_output_array.Count;
-
             SetLength(ind_output.ind_instruments, instruments_count);
-
             i := 0;
 
             while i < instruments_count do  begin
-               ind_output.ind_instruments[i].ind_figi := JSN.FindPath('instruments[' + inttostr(i) + '].figi').AsString;
                ind_output.ind_instruments[i].ind_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
                ind_output.ind_instruments[i].ind_classCode := JSN.FindPath('instruments[' + inttostr(i) + '].classCode').AsString;
                ind_output.ind_instruments[i].ind_currency := JSN.FindPath('instruments[' + inttostr(i) + '].currency').AsString;
@@ -9417,7 +9470,7 @@ begin
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetCountries';
+      endpoint_url := url_prod + 'InstrumentsService/GetCountries';
 
       json_request := '{}';
 
@@ -9426,6 +9479,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gco_input.gco_token);
 
       Client.AllowRedirect := true;
@@ -9439,6 +9493,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gco_output.gco_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9455,11 +9510,8 @@ begin
 
          if gco_output.gco_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('countries'));
-
             countries_count := json_output_array.Count;
-
             SetLength(gco_output.gco_countries, countries_count);
-
             i := 0;
 
             while i < countries_count do  begin
@@ -9498,7 +9550,7 @@ begin
 
       json_base := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetFuturesMargin';
+      endpoint_url := url_prod + 'InstrumentsService/GetFuturesMargin';
 
       json_base.Add('instrumentId', gfm_input.gfm_instrumentId);
 
@@ -9509,6 +9561,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gfm_input.gfm_token);
 
       Client.AllowRedirect := true;
@@ -9522,6 +9575,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gfm_output.gfm_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9574,7 +9628,7 @@ begin
 
       json_base := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetForecastBy';
+      endpoint_url := url_prod + 'InstrumentsService/GetForecastBy';
 
       json_base.Add('instrumentId', gfb_input.gfb_instrumentId);
 
@@ -9585,6 +9639,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gfb_input.gfb_token);
 
       Client.AllowRedirect := true;
@@ -9598,6 +9653,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gfb_output.gfb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9616,10 +9672,8 @@ begin
 
             json_output_array := TJSONArray(JSN.FindPath('targets'));
             targets_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gfb_output.gfb_targets, targets_count);
+            i := 0;
 
             while i < targets_count do  begin
                gfb_output.gfb_targets[i].gfb_uid := JSN.FindPath('targets[' + inttostr(i) + '].uid').AsString;
@@ -9636,7 +9690,6 @@ begin
                inc(i);
             end;
 
-
             gfb_output.gfb_consensus.gfb_uid := JSN.FindPath('consensus.uid').AsString;
             gfb_output.gfb_consensus.gfb_ticker := JSN.FindPath('consensus.ticker').AsString;
             gfb_output.gfb_consensus.gfb_recommendation := JSN.FindPath('consensus.recommendation').AsString;
@@ -9647,7 +9700,6 @@ begin
             gfb_output.gfb_consensus.gfb_maxTarget := UnitsNanoToDouble(JSN.FindPath('consensus.maxTarget.units').AsInt64 , JSN.FindPath('consensus.maxTarget.nano').AsInt64);
             gfb_output.gfb_consensus.gfb_priceChange := UnitsNanoToDouble(JSN.FindPath('consensus.priceChange.units').AsInt64 , JSN.FindPath('consensus.priceChange.nano').AsInt64);
             gfb_output.gfb_consensus.gfb_priceChangeRel := UnitsNanoToDouble(JSN.FindPath('consensus.priceChangeRel.units').AsInt64 , JSN.FindPath('consensus.priceChangeRel.nano').AsInt64);
-
          end;
       end;
    finally
@@ -9681,7 +9733,7 @@ begin
       json_base := TJSONObject.Create;
       json_input_array := TJSONArray.Create;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetRiskRates';
+      endpoint_url := url_prod + 'InstrumentsService/GetRiskRates';
 
       numb_uids := high(grr_input.grr_instrumentId);
 
@@ -9698,6 +9750,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + grr_input.grr_token);
 
       Client.AllowRedirect := true;
@@ -9711,6 +9764,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      grr_output.grr_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9726,13 +9780,10 @@ begin
          end;
 
          if grr_output.grr_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('instrumentRiskRates'));
             instrumentRiskRates_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(grr_output.grr_instrumentRiskRates, instrumentRiskRates_count);
+            i := 0;
 
             while i < instrumentRiskRates_count do  begin
                grr_output.grr_instrumentRiskRates[i].grr_instrumentUid := JSN.FindPath('instrumentRiskRates[' + inttostr(i) + '].instrumentUid').AsString;
@@ -9743,10 +9794,8 @@ begin
 
                json_output_array := TJSONArray(JSN.FindPath('instrumentRiskRates[' + inttostr(i) + '].shortRiskRates'));
                shortRiskRates_count := json_output_array.Count;
-
-               j := 0;
-
                SetLength(grr_output.grr_instrumentRiskRates[i].grr_shortRiskRates, shortRiskRates_count);
+               j := 0;
 
                while j < shortRiskRates_count do  begin
                   grr_output.grr_instrumentRiskRates[i].grr_shortRiskRates[j].grr_riskLevelCode := JSN.FindPath('instrumentRiskRates[' + inttostr(i) + '].shortRiskRates[' + inttostr(j) + '].riskLevelCode').AsString;
@@ -9756,10 +9805,8 @@ begin
 
                json_output_array := TJSONArray(JSN.FindPath('instrumentRiskRates[' + inttostr(i) + '].longRiskRates'));
                longRiskRates_count := json_output_array.Count;
-
-               k := 0;
-
                SetLength(grr_output.grr_instrumentRiskRates[i].grr_longRiskRates, longRiskRates_count);
+               k := 0;
 
                while k < longRiskRates_count do  begin
                   grr_output.grr_instrumentRiskRates[i].grr_longRiskRates[k].grr_riskLevelCode := JSN.FindPath('instrumentRiskRates[' + inttostr(i) + '].longRiskRates[' + inttostr(k) + '].riskLevelCode').AsString;
@@ -9768,7 +9815,6 @@ begin
                end;
 
                grr_output.grr_instrumentRiskRates[i].grr_error := JSN.FindPath('instrumentRiskRates[' + inttostr(i) + '].error').AsString;
-
                inc(i);
             end;
          end;
@@ -9803,7 +9849,7 @@ begin
       json_base := TJSONObject.Create;
       json_nested := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetConsensusForecasts';
+      endpoint_url := url_prod + 'InstrumentsService/GetConsensusForecasts';
 
       if gcf_input.gcf_paging.gcf_limit > 0 then json_nested.Add('limit', gcf_input.gcf_paging.gcf_limit);
       if gcf_input.gcf_paging.gcf_pageNumber >= 0 then json_nested.Add('pageNumber', gcf_input.gcf_paging.gcf_pageNumber);
@@ -9816,6 +9862,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gcf_input.gcf_token);
 
       Client.AllowRedirect := true;
@@ -9829,6 +9876,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gcf_output.gcf_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9844,13 +9892,10 @@ begin
          end;
 
          if gcf_output.gcf_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('items'));
             items_count := json_output_array.Count;
-
-            i := 0;
-
             SetLength(gcf_output.gcf_items, items_count);
+            i := 0;
 
             while i < items_count do  begin
                gcf_output.gcf_items[i].gcf_uid := JSN.FindPath('items[' + inttostr(i) + '].uid').AsString;
@@ -9904,7 +9949,7 @@ begin
       if sn_input.sn_instrumentStatus <> '' then json_base.Add('instrumentStatus', sn_input.sn_instrumentStatus);
       if sn_input.sn_instrumentExchange <> '' then json_base.Add('instrumentExchange', sn_input.sn_instrumentExchange);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/StructuredNotes';
+      endpoint_url := url_prod + 'InstrumentsService/StructuredNotes';
       json_request := json_base.AsJSON;
 
       InitSSLInterface;
@@ -9912,6 +9957,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + sn_input.sn_token);
 
       Client.AllowRedirect := true;
@@ -9925,6 +9971,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      sn_output.sn_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -9941,15 +9988,12 @@ begin
 
          if sn_output.sn_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
-
             notes_count := json_output_array.Count;
             SetLength(sn_output.sn_instruments, notes_count);
-
             i := 0;
 
             while i < notes_count do  begin
                sn_output.sn_instruments[i].sn_uid := JSN.FindPath('instruments[' + inttostr(i) + '].uid').AsString;
-               sn_output.sn_instruments[i].sn_figi := JSN.FindPath('instruments[' + inttostr(i) + '].figi').AsString;
                sn_output.sn_instruments[i].sn_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
                sn_output.sn_instruments[i].sn_classCode := JSN.FindPath('instruments[' + inttostr(i) + '].classCode').AsString;
                sn_output.sn_instruments[i].sn_isin := JSN.FindPath('instruments[' + inttostr(i) + '].isin').AsString;
@@ -10078,7 +10122,7 @@ begin
       if snb_input.snb_classCode <> '' then json_base.Add('classCode', snb_input.snb_classCode);
       if snb_input.snb_id <> '' then json_base.Add('id', snb_input.snb_id);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/StructuredNoteBy';
+      endpoint_url := url_prod + 'InstrumentsService/StructuredNoteBy';
 
       json_request := json_base.AsJSON;
 
@@ -10087,6 +10131,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + snb_input.snb_token);
 
       Client.AllowRedirect := true;
@@ -10100,6 +10145,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      snb_output.snb_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -10116,7 +10162,6 @@ begin
 
          if snb_output.snb_error_description = 0 then begin
             snb_output.snb_instrument.sn_uid := JSN.FindPath('instrument.uid').AsString;
-            snb_output.snb_instrument.sn_figi := JSN.FindPath('instrument.figi').AsString;
             snb_output.snb_instrument.sn_ticker := JSN.FindPath('instrument.ticker').AsString;
             snb_output.snb_instrument.sn_classCode := JSN.FindPath('instrument.classCode').AsString;
             snb_output.snb_instrument.sn_isin := JSN.FindPath('instrument.isin').AsString;
@@ -10240,7 +10285,7 @@ begin
       json_base := TJSONObject.Create;
       json_nested1 := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'OperationsService/GetDividendsForeignIssuer';
+      endpoint_url := url_prod + 'OperationsService/GetDividendsForeignIssuer';
 
 
       json_nested1.Add('accountId', gdfi_input.gdfi_generateDivForeignIssuerReport.gdfi_accountId);
@@ -10262,6 +10307,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gdfi_input.gdfi_token);
 
       Client.AllowRedirect := true;
@@ -10275,6 +10321,7 @@ begin
       end;
 
       requests_limit.Report_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gdfi_output.gdfi_x_tracking_id := requests_limit.Report_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -10302,7 +10349,6 @@ begin
             end;
 
             i := 0;
-
             SetLength(gdfi_output.gdfi_divForeignIssuerReport.gdfi_dividendsForeignIssuerReport, dividendsForeignIssuerReport_count);
 
             while i < dividendsForeignIssuerReport_count do  begin
@@ -10329,9 +10375,6 @@ begin
                gdfi_output.gdfi_divForeignIssuerReport.gdfi_page := JSN.FindPath('divForeignIssuerReport.page').AsInt64;
          end;
       end;
-
-
-
    finally
       Client.RequestBody.Free;
       Client.Free;
@@ -10366,7 +10409,7 @@ begin
       if o_input.o_basicInstrumentId <> '' then json_base.Add('basicInstrumentId', o_input.o_basicInstrumentId);
 
 
-      endpoint_url := url_tinvest + 'InstrumentsService/OptionsBy';
+      endpoint_url := url_prod + 'InstrumentsService/OptionsBy';
 
       json_request := json_base.AsJSON;
 
@@ -10375,6 +10418,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + o_input.o_token);
 
       Client.AllowRedirect := true;
@@ -10388,6 +10432,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      o_output.o_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -10404,10 +10449,8 @@ begin
 
          if o_output.o_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('instruments'));
-
             options_count := json_output_array.Count;
             SetLength(o_output.o_instruments, options_count);
-
             i := 0;
 
             while i < options_count do  begin
@@ -10516,8 +10559,7 @@ begin
       if ob_input.ob_classCode <> '' then json_base.Add('classCode', ob_input.ob_classCode);
       json_base.Add('id', ob_input.ob_id);
 
-
-      endpoint_url := url_tinvest + 'InstrumentsService/OptionBy';
+      endpoint_url := url_prod + 'InstrumentsService/OptionBy';
 
       json_request := json_base.AsJSON;
 
@@ -10526,6 +10568,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + ob_input.ob_token);
 
       Client.AllowRedirect := true;
@@ -10539,6 +10582,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      ob_output.ob_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -10657,7 +10701,7 @@ begin
       if gid_input.gid_limit > 0 then json_base.Add('limit', gid_input.gid_limit);
       if gid_input.gid_nextCursor <> '' then json_base.Add('nextCursor', gid_input.gid_nextCursor);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetInsiderDeals';
+      endpoint_url := url_prod + 'InstrumentsService/GetInsiderDeals';
 
       json_request := json_base.AsJSON;
 
@@ -10666,6 +10710,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gid_input.gid_token);
 
       Client.AllowRedirect := true;
@@ -10679,6 +10724,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gid_output.gid_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -10695,11 +10741,8 @@ begin
 
          if gid_output.gid_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('insiderDeals'));
-
             deals_count := json_output_array.Count;
-
             SetLength(gid_output.gid_insiderDeals, deals_count);
-
             i := 0;
 
             while i < deals_count do  begin
@@ -10751,7 +10794,7 @@ begin
       json_base := TJSONObject.Create;
       json_input_array := TJSONArray.Create;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/EditFavorites';
+      endpoint_url := url_prod + 'InstrumentsService/EditFavorites';
 
       instruments_count := high(ef_input.ef_instruments);
 
@@ -10770,6 +10813,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + ef_input.ef_token);
 
       Client.AllowRedirect := true;
@@ -10783,6 +10827,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      ef_output.ef_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -10799,15 +10844,11 @@ begin
 
          if ef_output.ef_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('favoriteInstruments'));
-
             favoriteInstruments_count := json_output_array.Count;
-
             SetLength(ef_output.ef_favoriteInstruments, favoriteInstruments_count);
-
             j := 0;
 
             while j < favoriteInstruments_count do  begin
-               ef_output.ef_favoriteInstruments[j].ef_figi := JSN.FindPath('favoriteInstruments[' + inttostr(j) + '].figi').AsString;
                ef_output.ef_favoriteInstruments[j].ef_ticker := JSN.FindPath('favoriteInstruments[' + inttostr(j) + '].ticker').AsString;
                ef_output.ef_favoriteInstruments[j].ef_classCode := JSN.FindPath('favoriteInstruments[' + inttostr(j) + '].classCode').AsString;
                ef_output.ef_favoriteInstruments[j].ef_isin := JSN.FindPath('favoriteInstruments[' + inttostr(j) + '].isin').AsString;
@@ -10817,7 +10858,6 @@ begin
                ef_output.ef_favoriteInstruments[j].ef_otcFlag := JSN.FindPath('favoriteInstruments[' + inttostr(j) + '].otcFlag').AsBoolean;
                ef_output.ef_favoriteInstruments[j].ef_apiTradeAvailableFlag := JSN.FindPath('favoriteInstruments[' + inttostr(j) + '].apiTradeAvailableFlag').AsBoolean;
                ef_output.ef_favoriteInstruments[j].ef_instrumentKind := JSN.FindPath('favoriteInstruments[' + inttostr(j) + '].instrumentKind').AsString;
-
                inc(j);
             end;
             ef_output.ef_groupId := JSN.FindPath('groupId').AsString;
@@ -10852,7 +10892,7 @@ begin
 
       json_base := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetFavorites';
+      endpoint_url := url_prod + 'InstrumentsService/GetFavorites';
 
       if gf_input.gf_groupId <> '' then json_base.Add('groupId', gf_input.gf_groupId);
 
@@ -10863,6 +10903,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gf_input.gf_token);
 
       Client.AllowRedirect := true;
@@ -10876,6 +10917,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gf_output.gf_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -10892,15 +10934,11 @@ begin
 
          if gf_output.gf_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('favoriteInstruments'));
-
             favoriteInstruments_count := json_output_array.Count;
-
             SetLength(gf_output.gf_favoriteInstruments, favoriteInstruments_count);
-
             i := 0;
 
             while i < favoriteInstruments_count do  begin
-               gf_output.gf_favoriteInstruments[i].ef_figi := JSN.FindPath('favoriteInstruments[' + inttostr(i) + '].figi').AsString;
                gf_output.gf_favoriteInstruments[i].ef_ticker := JSN.FindPath('favoriteInstruments[' + inttostr(i) + '].ticker').AsString;
                gf_output.gf_favoriteInstruments[i].ef_classCode := JSN.FindPath('favoriteInstruments[' + inttostr(i) + '].classCode').AsString;
                gf_output.gf_favoriteInstruments[i].ef_isin := JSN.FindPath('favoriteInstruments[' + inttostr(i) + '].isin').AsString;
@@ -10910,7 +10948,6 @@ begin
                gf_output.gf_favoriteInstruments[i].ef_otcFlag := JSN.FindPath('favoriteInstruments[' + inttostr(i) + '].otcFlag').AsBoolean;
                gf_output.gf_favoriteInstruments[i].ef_apiTradeAvailableFlag := JSN.FindPath('favoriteInstruments[' + inttostr(i) + '].apiTradeAvailableFlag').AsBoolean;
                gf_output.gf_favoriteInstruments[i].ef_instrumentKind := JSN.FindPath('favoriteInstruments[' + inttostr(i) + '].instrumentKind').AsString;
-
                inc(i);
             end;
             if JSN.FindPath('groupId') <> nil then gf_output.gf_groupId := JSN.FindPath('groupId').AsString;
@@ -10945,7 +10982,7 @@ begin
 
       json_base := TJSONObject.Create;
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetAssetBy';
+      endpoint_url := url_prod + 'InstrumentsService/GetAssetBy';
 
       json_base.Add('id', gab_input.gab_id);
 
@@ -10956,6 +10993,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gab_input.gab_token);
 
       Client.AllowRedirect := true;
@@ -10969,6 +11007,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gab_output.gab_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -11140,7 +11179,6 @@ begin
 
             while k < instruments_count do  begin
                gab_output.gab_asset.gab_instruments[k].gab_uid := JSN.FindPath('asset.instruments[' + inttostr(k) + '].uid').AsString;
-               gab_output.gab_asset.gab_instruments[k].gab_figi := JSN.FindPath('asset.instruments[' + inttostr(k) + '].figi').AsString;
                gab_output.gab_asset.gab_instruments[k].gab_instrumentType := JSN.FindPath('asset.instruments[' + inttostr(k) + '].instrumentType').AsString;
                gab_output.gab_asset.gab_instruments[k].gab_ticker := JSN.FindPath('asset.instruments[' + inttostr(k) + '].ticker').AsString;
                gab_output.gab_asset.gab_instruments[k].gab_classCode := JSN.FindPath('asset.instruments[' + inttostr(k) + '].classCode').AsString;
@@ -11195,7 +11233,7 @@ begin
       if gd_input.gd_to <> '' then json_base.Add('to', gd_input.gd_to);
       json_base.Add('instrumentId', gd_input.gd_instrumentId);
 
-      endpoint_url := url_tinvest + 'InstrumentsService/GetDividends';
+      endpoint_url := url_prod + 'InstrumentsService/GetDividends';
 
       json_request := json_base.AsJSON;
 
@@ -11204,6 +11242,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gd_input.gd_token);
 
       Client.AllowRedirect := true;
@@ -11217,6 +11256,7 @@ begin
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gd_output.gd_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -11233,11 +11273,8 @@ begin
 
          if gd_output.gd_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('dividends'));
-
             dividends_count := json_output_array.Count;
-
             SetLength(gd_output.gd_dividends, dividends_count);
-
             i := 0;
 
             while i < dividends_count do  begin
@@ -11253,134 +11290,6 @@ begin
                gd_output.gd_dividends[i].gd_closePrice.currency := JSN.FindPath('dividends[' + inttostr(i) + '].closePrice.currency').AsString;
                gd_output.gd_dividends[i].gd_yieldValue := UnitsNanoToDouble(JSN.FindPath('dividends[' + inttostr(i) + '].yieldValue.units').AsInt64 , JSN.FindPath('dividends[' + inttostr(i) + '].yieldValue.nano').AsInt64);
                gd_output.gd_dividends[i].gd_createdAt := JSN.FindPath('dividends[' + inttostr(i) + '].createdAt').AsString;
-               inc(i);
-            end;
-         end;
-      end;
-   finally
-      Client.RequestBody.Free;
-      Client.Free;
-      Response.Free;
-      json_base.Free;
-      if status_code <> 0 then JSN.Free;
-   end;
-end;
-
-procedure GetOperations (geo_input : geo_request; out geo_output : geo_response);
-var
-   JSN: TJSONData;
-   json_output_array : TJSONArray;
-   endpoint_url, json_output_struct, json_request : string;
-   Client: TFPHttpClient;
-   Response: TStringStream;
-   status_code, operations_count, trades_count, childOperations_count, i, j, k : int64;
-   json_base : TJSONObject;
-
-begin
-   try
-      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then
-      begin
-        Sleep(requests_limit.OperationsService_limit.h_ratelimit_reset * 1000);
-        requests_limit.OperationsService_limit.h_ratelimit_remaining := requests_limit.OperationsService_limit.h_ratelimit_limit - 1;
-      end;
-
-      json_base := TJSONObject.Create;
-
-      json_base.Add('accountId', geo_input.geo_accountId);
-      if geo_input.geo_from <> '' then json_base.Add('from', geo_input.geo_from);
-      if geo_input.geo_to <> '' then json_base.Add('to', geo_input.geo_to);
-      if geo_input.geo_state <> '' then json_base.Add('state', geo_input.geo_state);
-      if geo_input.geo_figi <> '' then json_base.Add('figi', geo_input.geo_figi);
-
-      endpoint_url := url_tinvest + 'OperationsService/GetOperations';
-
-      json_request := json_base.AsJSON;
-
-      InitSSLInterface;
-      Client := TFPHttpClient.Create(nil);
-      Client.AllowRedirect:=true;
-      Client.AddHeader('Content-Type', 'application/json');
-      Client.AddHeader('Accept', 'application/json');
-      Client.AddHeader('Authorization', 'Bearer ' + geo_input.geo_token);
-
-      Client.AllowRedirect := true;
-      Client.RequestBody := TRawByteStringStream.Create(json_request);
-      Response := TStringStream.Create('');
-
-      try
-         Client.Post(endpoint_url, Response);
-      except on E: Exception do
-
-      end;
-
-      requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
-
-      status_code := Client.ResponseStatusCode;
-      if status_code <> 0 then begin
-
-         SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
-         JSN := GetJSON(json_output_struct);
-
-         if JSN.FindPath('description') <> nil then begin
-            geo_output.geo_error_code := JSN.FindPath('code').AsInt64;
-            geo_output.geo_error_message := JSN.FindPath('message').AsString;
-            geo_output.geo_error_description := JSN.FindPath('description').AsInt64;
-         end;
-
-         if geo_output.geo_error_description = 0 then begin
-
-            json_output_array := TJSONArray(JSN.FindPath('operations'));
-            operations_count := json_output_array.Count;
-            SetLength(geo_output.geo_operations, operations_count);
-            i := 0;
-
-            while i < operations_count do  begin
-               geo_output.geo_operations[i].geo_id := JSN.FindPath('operations[' + inttostr(i) + '].id').AsString;
-               geo_output.geo_operations[i].geo_parentOperationId := JSN.FindPath('operations[' + inttostr(i) + '].parentOperationId').AsString;
-               geo_output.geo_operations[i].geo_currency := JSN.FindPath('operations[' + inttostr(i) + '].currency').AsString;
-               geo_output.geo_operations[i].geo_payment.moneyval := UnitsNanoToDouble(JSN.FindPath('operations[' + inttostr(i) + '].payment.units').AsInt64 , JSN.FindPath('operations[' + inttostr(i) + '].payment.nano').AsInt64);
-               geo_output.geo_operations[i].geo_payment.currency := JSN.FindPath('operations[' + inttostr(i) + '].payment.currency').AsString;
-               geo_output.geo_operations[i].geo_price.moneyval := UnitsNanoToDouble(JSN.FindPath('operations[' + inttostr(i) + '].price.units').AsInt64 , JSN.FindPath('operations[' + inttostr(i) + '].price.nano').AsInt64);
-               geo_output.geo_operations[i].geo_price.currency := JSN.FindPath('operations[' + inttostr(i) + '].price.currency').AsString;
-               geo_output.geo_operations[i].geo_state := JSN.FindPath('operations[' + inttostr(i) + '].state').AsString;
-               geo_output.geo_operations[i].geo_quantity := JSN.FindPath('operations[' + inttostr(i) + '].quantity').AsInt64;
-               geo_output.geo_operations[i].geo_quantityRest := JSN.FindPath('operations[' + inttostr(i) + '].quantityRest').AsInt64;
-               geo_output.geo_operations[i].geo_figi := JSN.FindPath('operations[' + inttostr(i) + '].figi').AsString;
-               geo_output.geo_operations[i].geo_instrumentType := JSN.FindPath('operations[' + inttostr(i) + '].instrumentType').AsString;
-               geo_output.geo_operations[i].geo_date := JSN.FindPath('operations[' + inttostr(i) + '].date').AsString;
-               geo_output.geo_operations[i].geo_type := JSN.FindPath('operations[' + inttostr(i) + '].type').AsString;
-               geo_output.geo_operations[i].geo_operationType := JSN.FindPath('operations[' + inttostr(i) + '].operationType').AsString;
-
-               json_output_array := TJSONArray(JSN.FindPath('operations[' + inttostr(i) + '].trades'));
-               trades_count := json_output_array.Count;
-               SetLength(geo_output.geo_operations[i].geo_trades, trades_count);
-               j := 0;
-
-               while j < trades_count do  begin
-                  geo_output.geo_operations[i].geo_trades[j].geo_tradeId := JSN.FindPath('operations[' + inttostr(i) + '].trades[' + inttostr(j) + '].tradeId').AsString;
-                  geo_output.geo_operations[i].geo_trades[j].geo_dateTime := JSN.FindPath('operations[' + inttostr(i) + '].trades[' + inttostr(j) + '].dateTime').AsString;
-                  geo_output.geo_operations[i].geo_trades[j].geo_quantity := JSN.FindPath('operations[' + inttostr(i) + '].trades[' + inttostr(j) + '].quantity').AsInt64;
-                  geo_output.geo_operations[i].geo_trades[j].geo_price.moneyval := UnitsNanoToDouble(JSN.FindPath('operations[' + inttostr(i) + '].trades[' + inttostr(j) + '].price.units').AsInt64 , JSN.FindPath('operations[' + inttostr(i) + '].trades[' + inttostr(j) + '].price.nano').AsInt64);
-                  geo_output.geo_operations[i].geo_trades[j].geo_price.currency := JSN.FindPath('operations[' + inttostr(i) + '].trades[' + inttostr(j) + '].price.currency').AsString;
-                  inc(j);
-               end;
-
-               geo_output.geo_operations[i].geo_assetUid := JSN.FindPath('operations[' + inttostr(i) + '].assetUid').AsString;
-               geo_output.geo_operations[i].geo_positionUid := JSN.FindPath('operations[' + inttostr(i) + '].positionUid').AsString;
-               geo_output.geo_operations[i].geo_instrumentUid := JSN.FindPath('operations[' + inttostr(i) + '].instrumentUid').AsString;
-
-               json_output_array := TJSONArray(JSN.FindPath('operations[' + inttostr(i) + '].childOperations'));
-               childOperations_count := json_output_array.Count;
-               SetLength(geo_output.geo_operations[i].geo_childOperations, childOperations_count);
-               k := 0;
-
-               while k < childOperations_count do  begin
-                  geo_output.geo_operations[i].geo_childOperations[k].geo_instrumentUid := JSN.FindPath('operations[' + inttostr(i) + '].childOperations[' + inttostr(k) + '].instrumentUid').AsString;
-                  geo_output.geo_operations[i].geo_childOperations[k].geo_payment.moneyval := UnitsNanoToDouble(JSN.FindPath('operations[' + inttostr(i) + '].childOperations[' + inttostr(k) + '].payment.units').AsInt64 , JSN.FindPath('operations[' + inttostr(i) + '].childOperations[' + inttostr(k) + '].payment.nano').AsInt64);
-                  geo_output.geo_operations[i].geo_childOperations[k].geo_payment.currency := JSN.FindPath('operations[' + inttostr(i) + '].childOperations[' + inttostr(k) + '].payment.currency').AsString;
-                  inc(k);
-               end;
                inc(i);
             end;
          end;
@@ -11416,7 +11325,7 @@ begin
       instrumentId_input_array := TJSONArray.Create;
       values_input_array := TJSONArray.Create;
 
-      endpoint_url := url_tinvest + 'MarketDataService/GetMarketValues';
+      endpoint_url := url_prod + 'MarketDataService/GetMarketValues';
 
       instrumentId_count := high(gmv_input.gmv_instrumentId);
       values_req_count := high(gmv_input.gmv_values);
@@ -11438,6 +11347,7 @@ begin
       Client.AllowRedirect:=true;
       Client.AddHeader('Content-Type', 'application/json');
       Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
       Client.AddHeader('Authorization', 'Bearer ' + gmv_input.gmv_token);
 
       Client.AllowRedirect := true;
@@ -11451,6 +11361,7 @@ begin
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gmv_output.gmv_x_tracking_id := requests_limit.MarketDataService_limit.h_tracking_id;
 
       status_code := Client.ResponseStatusCode;
       if status_code <> 0 then begin
@@ -11488,7 +11399,6 @@ begin
 
                gmv_output.gmv_instruments[k].gmv_ticker := JSN.FindPath('instruments[' + inttostr(k) + '].ticker').AsString;
                gmv_output.gmv_instruments[k].gmv_classCode := JSN.FindPath('instruments[' + inttostr(k) + '].classCode').AsString;
-
                inc(k);
             end;
          end;
@@ -11501,6 +11411,226 @@ begin
       if status_code <> 0 then JSN.Free;
    end;
 end;
+
+procedure OpenSandboxAccount (osa_input : osa_request; out osa_output : osa_response);
+var
+   JSN: TJSONData;
+   endpoint_url, json_output_struct, json_request : string;
+   Client: TFPHttpClient;
+   Response: TStringStream;
+   status_code : int64;
+   json_base : TJSONObject;
+
+begin
+   try
+      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then
+      begin
+        Sleep(requests_limit.SandboxService_limit.h_ratelimit_reset * 1000);
+        requests_limit.SandboxService_limit.h_ratelimit_remaining := requests_limit.SandboxService_limit.h_ratelimit_limit - 1;
+      end;
+
+      json_base := TJSONObject.Create;
+      json_base.Add('name', osa_input.osa_name);
+
+      endpoint_url := url_sandbox + 'SandboxService/OpenSandboxAccount';
+
+      json_request := json_base.AsJSON;
+
+      InitSSLInterface;
+      Client := TFPHttpClient.Create(nil);
+      Client.AllowRedirect:=true;
+      Client.AddHeader('Content-Type', 'application/json');
+      Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
+      Client.AddHeader('Authorization', 'Bearer ' + osa_input.osa_token);
+
+      Client.AllowRedirect := true;
+      Client.RequestBody := TRawByteStringStream.Create(json_request);
+      Response := TStringStream.Create('');
+
+      try
+         Client.Post(endpoint_url, Response);
+      except on E: Exception do
+
+      end;
+
+      requests_limit.SandboxService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      osa_output.osa_x_tracking_id := requests_limit.SandboxService_limit.h_tracking_id;
+
+      status_code := Client.ResponseStatusCode;
+      if status_code <> 0 then begin
+
+         SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
+         JSN := GetJSON(json_output_struct);
+
+         if JSN.FindPath('description') <> nil then begin
+            osa_output.osa_error_code := JSN.FindPath('code').AsInt64;
+            osa_output.osa_error_message := JSN.FindPath('message').AsString;
+            osa_output.osa_error_description := JSN.FindPath('description').AsInt64;
+         end;
+
+         if osa_output.osa_error_description = 0 then begin
+            osa_output.osa_accountId := JSN.FindPath('accountId').AsString;
+         end;
+      end;
+   finally
+      Client.RequestBody.Free;
+      Client.Free;
+      Response.Free;
+      json_base.Free;
+      if status_code <> 0 then JSN.Free;
+   end;
+end;
+
+procedure CloseSandboxAccount (csa_input : csa_request; out csa_output : csa_response);
+var
+   JSN: TJSONData;
+   endpoint_url, json_output_struct, json_request : string;
+   Client: TFPHttpClient;
+   Response: TStringStream;
+   status_code : int64;
+   json_base : TJSONObject;
+
+begin
+   try
+      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then
+      begin
+        Sleep(requests_limit.SandboxService_limit.h_ratelimit_reset * 1000);
+        requests_limit.SandboxService_limit.h_ratelimit_remaining := requests_limit.SandboxService_limit.h_ratelimit_limit - 1;
+      end;
+
+      json_base := TJSONObject.Create;
+      json_base.Add('accountId', csa_input.csa_accountId);
+
+      endpoint_url := url_sandbox + 'SandboxService/CloseSandboxAccount';
+
+      json_request := json_base.AsJSON;
+
+      InitSSLInterface;
+      Client := TFPHttpClient.Create(nil);
+      Client.AllowRedirect:=true;
+      Client.AddHeader('Content-Type', 'application/json');
+      Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
+      Client.AddHeader('Authorization', 'Bearer ' + csa_input.csa_token);
+
+      Client.AllowRedirect := true;
+      Client.RequestBody := TRawByteStringStream.Create(json_request);
+      Response := TStringStream.Create('');
+
+      try
+         Client.Post(endpoint_url, Response);
+      except on E: Exception do
+
+      end;
+
+      requests_limit.SandboxService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      csa_output.csa_x_tracking_id := requests_limit.SandboxService_limit.h_tracking_id;
+
+      status_code := Client.ResponseStatusCode;
+      if status_code <> 0 then begin
+
+         SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
+         JSN := GetJSON(json_output_struct);
+
+         if JSN.FindPath('description') <> nil then begin
+            csa_output.csa_error_code := JSN.FindPath('code').AsInt64;
+            csa_output.csa_error_message := JSN.FindPath('message').AsString;
+            csa_output.csa_error_description := JSN.FindPath('description').AsInt64;
+         end;
+
+         if csa_output.csa_error_description = 0 then begin
+            //
+         end;
+      end;
+   finally
+      Client.RequestBody.Free;
+      Client.Free;
+      Response.Free;
+      json_base.Free;
+      if status_code <> 0 then JSN.Free;
+   end;
+end;
+
+procedure SandboxPayIn (spi_input : spi_request; out spi_output : spi_response);
+var
+   JSN: TJSONData;
+   endpoint_url, json_output_struct, json_request : string;
+   Client: TFPHttpClient;
+   Response: TStringStream;
+   status_code : int64;
+   json_base, json_nested : TJSONObject;
+
+begin
+   try
+      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then
+      begin
+        Sleep(requests_limit.SandboxService_limit.h_ratelimit_reset * 1000);
+        requests_limit.SandboxService_limit.h_ratelimit_remaining := requests_limit.SandboxService_limit.h_ratelimit_limit - 1;
+      end;
+
+      json_base := TJSONObject.Create;
+      json_nested := TJSONObject.Create;
+
+      json_base.Add('accountId', spi_input.spi_accountId);
+      if spi_input.spi_amount.moneyval >0 then begin
+         json_nested.Add('nano', Trunc(Frac(spi_input.spi_amount.moneyval)*1000000000));
+         json_nested.Add('units', Trunc(spi_input.spi_amount.moneyval));
+         json_nested.Add('currency', spi_input.spi_amount.currency);
+         json_base.Add('amount', json_nested);
+      end;
+
+      endpoint_url := url_sandbox + 'SandboxService/SandboxPayIn';
+
+      json_request := json_base.AsJSON;
+
+      InitSSLInterface;
+      Client := TFPHttpClient.Create(nil);
+      Client.AllowRedirect:=true;
+      Client.AddHeader('Content-Type', 'application/json');
+      Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
+      Client.AddHeader('Authorization', 'Bearer ' + spi_input.spi_token);
+
+      Client.AllowRedirect := true;
+      Client.RequestBody := TRawByteStringStream.Create(json_request);
+      Response := TStringStream.Create('');
+
+      try
+         Client.Post(endpoint_url, Response);
+      except on E: Exception do
+
+      end;
+
+      requests_limit.SandboxService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      spi_output.spi_x_tracking_id := requests_limit.SandboxService_limit.h_tracking_id;
+
+      status_code := Client.ResponseStatusCode;
+      if status_code <> 0 then begin
+
+         SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
+         JSN := GetJSON(json_output_struct);
+
+         if JSN.FindPath('description') <> nil then begin
+            spi_output.spi_error_code := JSN.FindPath('code').AsInt64;
+            spi_output.spi_error_message := JSN.FindPath('message').AsString;
+            spi_output.spi_error_description := JSN.FindPath('description').AsInt64;
+         end;
+
+         if spi_output.spi_error_description = 0 then begin
+            spi_output.spi_balance.moneyval := UnitsNanoToDouble(JSN.FindPath('balance.units').AsInt64 , JSN.FindPath('balance.nano').AsInt64);;
+            spi_output.spi_balance.currency := JSN.FindPath('balance.currency').AsString;
+         end;
+      end;
+   finally
+      Client.RequestBody.Free;
+      Client.Free;
+      Response.Free;
+      json_base.Free;
+      if status_code <> 0 then JSN.Free;
+   end;
+end;
+
 
 
 
