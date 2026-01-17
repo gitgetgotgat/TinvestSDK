@@ -2947,8 +2947,7 @@ var
 
 begin
    try
-      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.UsersService_limit.h_ratelimit_reset * 1000);
         requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
       end;
@@ -3001,9 +3000,8 @@ begin
             json_output_array := TJSONArray(JSN.FindPath('accounts'));
 
             acc_count := json_output_array.Count;
-            i := 0;
-
             SetLength(ga_output.ga_accounts, acc_count);
+            i := 0;
 
             while i < acc_count do  begin
                ga_output.ga_accounts[i].ga_id := JSN.FindPath('accounts[' + inttostr(i) + '].id').AsString;
@@ -3039,8 +3037,7 @@ var
 
 begin
    try
-      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OperationsService_limit.h_ratelimit_reset * 1000);
         requests_limit.OperationsService_limit.h_ratelimit_remaining := requests_limit.OperationsService_limit.h_ratelimit_limit - 1;
       end;
@@ -3092,10 +3089,8 @@ begin
          end;
 
          if gp_output.gp_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('positions'));
             pos_count := json_output_array.Count;
-
             json_output_array := TJSONArray(JSN.FindPath('virtualPositions'));
             vir_pos_count := json_output_array.Count;
 
@@ -3121,7 +3116,6 @@ begin
 
             i := 0;
             j := 0;
-
             SetLength(gp_output.gp_positions, pos_count);
             SetLength(gp_output.gp_virtualPositions, vir_pos_count);
 
@@ -3193,8 +3187,7 @@ var
 
 begin
    try
-      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OperationsService_limit.h_ratelimit_reset * 1000);
         requests_limit.OperationsService_limit.h_ratelimit_remaining := requests_limit.OperationsService_limit.h_ratelimit_limit - 1;
       end;
@@ -3264,8 +3257,8 @@ begin
          if gobc_output.gobc_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('items'));
             operations_numb := json_output_array.Count;
-            i := 0;
             SetLength(gobc_output.gobc_items, operations_numb +1);
+            i := 0;
 
             gobc_output.gobc_hasNext := JSN.FindPath('hasNext').AsBoolean;
             gobc_output.gobc_nextCursor := JSN.FindPath('nextCursor').AsString;
@@ -3328,9 +3321,8 @@ begin
                if JSN.FindPath('items[' + inttostr(i) + '].childOperations') <> nil then begin
                   json_output_array := TJSONArray(JSN.FindPath('items[' + inttostr(i) + '].childOperations'));
                   child_count := json_output_array.Count;
-                  j := 0;
-
                   SetLength(gobc_output.gobc_items[i].gobc_childOperations, child_count);
+                  j := 0;
 
                   while j < child_count do  begin
                      gobc_output.gobc_items[i].gobc_childOperations[j].gobc_instrumentUid := JSN.FindPath('items[' + inttostr(i) + '].childOperations[' + inttostr(j) + '].instrumentUid').AsString;
@@ -3363,8 +3355,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -3529,8 +3520,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -3680,8 +3670,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -3835,8 +3824,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -3984,8 +3972,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -4082,8 +4069,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -4241,8 +4227,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -4383,8 +4368,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -4530,8 +4514,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -4673,8 +4656,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -4805,8 +4787,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -4861,8 +4842,8 @@ begin
          if gc_output.gc_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('candles'));
             candles_count := json_output_array.Count;
-            i := 0;
             SetLength(gc_output.gc_candles, candles_count);
+            i := 0;
 
             while i < candles_count do  begin
                gc_output.gc_candles[i].gc_open := UnitsNanoToDouble(JSN.FindPath('candles[' + inttostr(i) + '].open.units').AsInt64 , JSN.FindPath('candles[' + inttostr(i) + '].open.nano').AsInt64);
@@ -4903,8 +4884,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -5017,8 +4997,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -5089,8 +5068,8 @@ begin
          if gta_output.gta_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('technicalIndicators'));
             indicators_count := json_output_array.Count;
-            i := 0;
             SetLength(gta_output.gta_technicalIndicators, indicators_count);
+            i := 0;
 
             while i < indicators_count do  begin
                gta_output.gta_technicalIndicators[i].gta_timestamp := JSN.FindPath('technicalIndicators[' + inttostr(i) + '].timestamp').AsString;
@@ -5128,8 +5107,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -5207,8 +5185,7 @@ var
 
 begin
    try
-      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.OrdersService_limit.h_ratelimit_remaining := requests_limit.OrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -5261,8 +5238,8 @@ begin
          if go_output.go_error_description = 0 then begin
             json_output_array := TJSONArray(JSN.FindPath('orders'));
             orders_count := json_output_array.Count;
-            i := 0;
             SetLength(go_output.go_orders, orders_count);
+            i := 0;
 
             while i < orders_count do  begin
                go_output.go_orders[i].go_orderId := JSN.FindPath('orders[' + inttostr(i) + '].orderId').AsString;
@@ -5284,11 +5261,11 @@ begin
                go_output.go_orders[i].go_direction := JSN.FindPath('orders[' + inttostr(i) + '].direction').AsString;
                go_output.go_orders[i].go_initialSecurityPrice.moneyval := UnitsNanoToDouble(JSN.FindPath('orders[' + inttostr(i) + '].initialSecurityPrice.units').AsInt64 , JSN.FindPath('orders[' + inttostr(i) + '].initialSecurityPrice.nano').AsInt64);
                go_output.go_orders[i].go_initialSecurityPrice.currency := JSN.FindPath('orders[' + inttostr(i) + '].initialSecurityPrice.currency').AsString;
+
                json_output_array := TJSONArray(JSN.FindPath('orders[' + inttostr(i) + '].stages'));
                stages_count := json_output_array.Count;
-               j := 0;
-
                SetLength(go_output.go_orders[i].go_stages, stages_count);
+               j := 0;
 
                while j < stages_count do  begin
                   go_output.go_orders[i].go_stages[j].go_price.moneyval := UnitsNanoToDouble(JSN.FindPath('orders[' + inttostr(i) + '].stages[' + inttostr(j) + '].price.units').AsInt64 , JSN.FindPath('orders[' + inttostr(i) + '].stages[' + inttostr(j) + '].price.nano').AsInt64);
@@ -5331,8 +5308,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -5389,8 +5365,8 @@ begin
          end;
 
          if gcp_output.gcp_error_description = 0 then begin
-            i := 0;
             SetLength(gcp_output.gcp_closePrices, numb_uids+1);
+            i := 0;
 
             while i <= numb_uids do  begin
                if JSN.FindPath('closePrices[' + inttostr(i) + '].instrumentUid') <> nil then
@@ -5427,8 +5403,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -5485,8 +5460,8 @@ begin
          end;
 
          if glp_output.glp_error_description = 0 then begin
-            i := 0;
             SetLength(glp_output.glp_lastPrices, numb_uids+1);
+            i := 0;
 
             while i <= numb_uids do  begin
                if JSN.FindPath('lastPrices[' + inttostr(i) + '].instrumentUid') <> nil then
@@ -5522,8 +5497,7 @@ var
 
 begin
    try
-      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.OrdersService_limit.h_ratelimit_remaining := requests_limit.OrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -5607,8 +5581,8 @@ begin
 
             json_output_array := TJSONArray(JSN.FindPath('stages'));
             stages_count := json_output_array.Count;
-            i := 0;
             SetLength(gos_output.gos_stages, stages_count);
+            i := 0;
 
             while i < stages_count do  begin
                gos_output.gos_stages[i].gos_price := UnitsNanoToDouble(JSN.FindPath('stages[' + inttostr(i) + '].price.units').AsInt64 , JSN.FindPath('stages[' + inttostr(i) + '].price.nano').AsInt64);
@@ -5639,8 +5613,7 @@ var
 
 begin
    try
-      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.OrdersService_limit.h_ratelimit_remaining := requests_limit.OrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -5719,8 +5692,7 @@ var
 
 begin
    try
-      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.OrdersService_limit.h_ratelimit_remaining := requests_limit.OrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -5810,8 +5782,7 @@ var
 
 begin
    try
-      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.OrdersService_limit.h_ratelimit_remaining := requests_limit.OrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -5933,8 +5904,7 @@ var
 
 begin
    try
-      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.OrdersService_limit.h_ratelimit_remaining := requests_limit.OrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -5988,14 +5958,13 @@ begin
       if status_code <> 0 then begin
 
          SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
          JSN := GetJSON(json_output_struct);
 
-      if JSN.FindPath('description') <> nil then begin
-         poa_output.poa_error_code := JSN.FindPath('code').AsInt64;
-         poa_output.poa_error_message := JSN.FindPath('message').AsString;
-         poa_output.poa_error_description := JSN.FindPath('description').AsInt64;
-      end;
+         if JSN.FindPath('description') <> nil then begin
+            poa_output.poa_error_code := JSN.FindPath('code').AsInt64;
+            poa_output.poa_error_message := JSN.FindPath('message').AsString;
+            poa_output.poa_error_description := JSN.FindPath('description').AsInt64;
+         end;
 
          if poa_output.poa_error_description = 0 then begin
             poa_output.poa_orderRequestId := JSN.FindPath('orderRequestId').AsString;
@@ -6023,8 +5992,7 @@ var
 
 begin
    try
-      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.OrdersService_limit.h_ratelimit_remaining := requests_limit.OrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -6127,8 +6095,7 @@ var
 
 begin
    try
-      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.OrdersService_limit.h_ratelimit_remaining := requests_limit.OrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -6178,7 +6145,6 @@ begin
       if status_code <> 0 then begin
 
          SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
          JSN := GetJSON(json_output_struct);
 
          if JSN.FindPath('description') <> nil then begin
@@ -6245,8 +6211,7 @@ var
 
 begin
    try
-      if requests_limit.StopOrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.StopOrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.StopOrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.StopOrdersService_limit.h_ratelimit_remaining := requests_limit.StopOrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -6322,7 +6287,6 @@ begin
       if status_code <> 0 then begin
 
          SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
          JSN := GetJSON(json_output_struct);
 
          if JSN.FindPath('description') <> nil then begin
@@ -6359,8 +6323,7 @@ var
 
 begin
    try
-      if requests_limit.StopOrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.StopOrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.StopOrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.StopOrdersService_limit.h_ratelimit_remaining := requests_limit.StopOrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -6473,8 +6436,7 @@ var
 
 begin
    try
-      if requests_limit.StopOrdersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.StopOrdersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.StopOrdersService_limit.h_ratelimit_reset * 1000);
         requests_limit.StopOrdersService_limit.h_ratelimit_remaining := requests_limit.StopOrdersService_limit.h_ratelimit_limit - 1;
       end;
@@ -6515,7 +6477,6 @@ begin
       if status_code <> 0 then begin
 
          SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
          JSN := GetJSON(json_output_struct);
 
          if JSN.FindPath('description') <> nil then begin
@@ -6549,8 +6510,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -6639,8 +6599,7 @@ var
 
 begin
    try
-      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.UsersService_limit.h_ratelimit_reset * 1000);
         requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
       end;
@@ -6720,8 +6679,7 @@ var
 
 begin
    try
-      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.UsersService_limit.h_ratelimit_reset * 1000);
         requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
       end;
@@ -6802,8 +6760,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -6877,8 +6834,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -6950,8 +6906,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -7048,8 +7003,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -7134,8 +7088,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -7264,8 +7217,7 @@ var
 
 begin
    try
-      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.UsersService_limit.h_ratelimit_reset * 1000);
         requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
       end;
@@ -7375,8 +7327,7 @@ var
 
 begin
    try
-      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.UsersService_limit.h_ratelimit_reset * 1000);
         requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
       end;
@@ -7469,8 +7420,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -7509,7 +7459,6 @@ begin
       if status_code <> 0 then begin
 
          SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
          JSN := GetJSON(json_output_struct);
 
          if JSN.FindPath('description') <> nil then begin
@@ -7611,8 +7560,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -7745,8 +7693,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -7836,8 +7783,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -7888,7 +7834,6 @@ begin
          end;
 
          if gbe_output.gbe_error_description = 0 then begin
-
             json_output_array := TJSONArray(JSN.FindPath('events'));
             events_count := json_output_array.Count;
             SetLength(gbe_output.gbe_events, events_count);
@@ -7952,8 +7897,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -8148,8 +8092,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -8259,8 +8202,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -8347,8 +8289,7 @@ var
 
 begin
    try
-      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OperationsService_limit.h_ratelimit_reset * 1000);
         requests_limit.OperationsService_limit.h_ratelimit_remaining := requests_limit.OperationsService_limit.h_ratelimit_limit - 1;
       end;
@@ -8496,8 +8437,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -8590,8 +8530,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -8671,8 +8610,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -8766,8 +8704,7 @@ var
 
 begin
    try
-      if requests_limit.SignalService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.SignalService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.SignalService_limit.h_ratelimit_reset * 1000);
         requests_limit.SignalService_limit.h_ratelimit_remaining := requests_limit.SignalService_limit.h_ratelimit_limit - 1;
       end;
@@ -8805,7 +8742,6 @@ begin
       if status_code <> 0 then begin
 
          SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
          JSN := GetJSON(json_output_struct);
 
          if JSN.FindPath('description') <> nil then begin
@@ -8858,8 +8794,7 @@ var
 
 begin
    try
-      if requests_limit.SignalService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.SignalService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.SignalService_limit.h_ratelimit_reset * 1000);
         requests_limit.SignalService_limit.h_ratelimit_remaining := requests_limit.SignalService_limit.h_ratelimit_limit - 1;
       end;
@@ -8971,8 +8906,7 @@ var
 
 begin
    try
-      if requests_limit.Currency_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.Currency_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.Currency_limit.h_ratelimit_reset * 1000);
         requests_limit.Currency_limit.h_ratelimit_remaining := requests_limit.Currency_limit.h_ratelimit_limit - 1;
       end;
@@ -9052,8 +8986,7 @@ var
 
 begin
    try
-      if requests_limit.Currency_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.Currency_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.Currency_limit.h_ratelimit_reset * 1000);
         requests_limit.Currency_limit.h_ratelimit_remaining := requests_limit.Currency_limit.h_ratelimit_limit - 1;
       end;
@@ -9133,8 +9066,7 @@ var
 
 begin
    try
-      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.OperationsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.OperationsService_limit.h_ratelimit_reset * 1000);
         requests_limit.OperationsService_limit.h_ratelimit_remaining := requests_limit.OperationsService_limit.h_ratelimit_limit - 1;
       end;
@@ -9240,8 +9172,7 @@ var
 
 begin
    try
-      if requests_limit.Report_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.Report_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.Report_limit.h_ratelimit_reset * 1000);
         requests_limit.Report_limit.h_ratelimit_remaining := requests_limit.Report_limit.h_ratelimit_limit - 1;
       end;
@@ -9311,8 +9242,8 @@ begin
                brokerReport_count := json_output_array.Count;
             end;
 
-            i := 0;
             SetLength(gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport, brokerReport_count);
+            i := 0;
 
             while i < brokerReport_count do  begin
                gbr_output.gbr_getBrokerReportResponse.gbr_brokerReport[i].gbr_tradeId := JSN.FindPath('getBrokerReportResponse.brokerReport[' + inttostr(i) + '].tradeId').AsString;
@@ -9379,8 +9310,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -9462,8 +9392,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -9540,8 +9469,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -9618,8 +9546,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -9722,8 +9649,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -9838,8 +9764,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -9936,8 +9861,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -9975,7 +9899,6 @@ begin
       if status_code <> 0 then begin
 
          SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
-
          JSN := GetJSON(json_output_struct);
 
          if JSN.FindPath('description') <> nil then begin
@@ -10108,8 +10031,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -10274,8 +10196,7 @@ var
 
 begin
    try
-      if requests_limit.Report_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.Report_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.Report_limit.h_ratelimit_reset * 1000);
         requests_limit.Report_limit.h_ratelimit_remaining := requests_limit.Report_limit.h_ratelimit_limit - 1;
       end;
@@ -10346,8 +10267,8 @@ begin
                dividendsForeignIssuerReport_count := json_output_array.Count;
             end;
 
-            i := 0;
             SetLength(gdfi_output.gdfi_divForeignIssuerReport.gdfi_dividendsForeignIssuerReport, dividendsForeignIssuerReport_count);
+            i := 0;
 
             while i < dividendsForeignIssuerReport_count do  begin
                gdfi_output.gdfi_divForeignIssuerReport.gdfi_dividendsForeignIssuerReport[i].gdfi_recordDate := JSN.FindPath('divForeignIssuerReport.dividendsForeignIssuerReport[' + inttostr(i) + '].recordDate').AsString;
@@ -10394,8 +10315,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -10545,8 +10465,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -10687,8 +10606,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -10783,8 +10701,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -10882,8 +10799,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -10972,8 +10888,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -11219,8 +11134,7 @@ var
 
 begin
    try
-      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
       end;
@@ -11313,8 +11227,7 @@ var
 
 begin
    try
-      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.MarketDataService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.MarketDataService_limit.h_ratelimit_reset * 1000);
         requests_limit.MarketDataService_limit.h_ratelimit_remaining := requests_limit.MarketDataService_limit.h_ratelimit_limit - 1;
       end;
@@ -11421,8 +11334,7 @@ var
 
 begin
    try
-      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.SandboxService_limit.h_ratelimit_reset * 1000);
         requests_limit.SandboxService_limit.h_ratelimit_remaining := requests_limit.SandboxService_limit.h_ratelimit_limit - 1;
       end;
@@ -11491,8 +11403,7 @@ var
 
 begin
    try
-      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.SandboxService_limit.h_ratelimit_reset * 1000);
         requests_limit.SandboxService_limit.h_ratelimit_remaining := requests_limit.SandboxService_limit.h_ratelimit_limit - 1;
       end;
@@ -11561,8 +11472,7 @@ var
 
 begin
    try
-      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then
-      begin
+      if requests_limit.SandboxService_limit.h_ratelimit_remaining <= 1 then begin
         Sleep(requests_limit.SandboxService_limit.h_ratelimit_reset * 1000);
         requests_limit.SandboxService_limit.h_ratelimit_remaining := requests_limit.SandboxService_limit.h_ratelimit_limit - 1;
       end;
