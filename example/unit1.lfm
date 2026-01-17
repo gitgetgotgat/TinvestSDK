@@ -294,10 +294,10 @@ object Form1: TForm1
     Height = 224
     Top = 56
     Width = 1232
-    ActivePage = TabSheet1
+    ActivePage = TabSheet22
     MultiLine = True
     Options = [nboMultiLine]
-    TabIndex = 0
+    TabIndex = 25
     TabOrder = 2
     object TabSheet1: TTabSheet
       Caption = 'GetAccounts'
@@ -2181,6 +2181,115 @@ object Form1: TForm1
         Style = csDropDownList
         TabOrder = 2
         Text = 'INSTRUMENT_EXCHANGE_UNSPECIFIED'
+      end
+    end
+    object TabSheet31: TTabSheet
+      Caption = 'Sandbox'
+      ClientHeight = 156
+      ClientWidth = 1224
+      object btnCloseSandboxAccount: TButton
+        Left = 8
+        Height = 30
+        Top = 56
+        Width = 240
+        Caption = 'CloseSandboxAccount'
+        DoubleBuffered = True
+        Font.Style = [fsBold]
+        ParentDoubleBuffered = False
+        ParentFont = False
+        TabOrder = 0
+        OnClick = btnCloseSandboxAccountClick
+      end
+      object btnOpenSandboxAccount: TButton
+        Left = 8
+        Height = 30
+        Top = 8
+        Width = 240
+        Caption = 'OpenSandboxAccount'
+        DoubleBuffered = True
+        Font.Style = [fsBold]
+        ParentDoubleBuffered = False
+        ParentFont = False
+        TabOrder = 1
+        OnClick = btnOpenSandboxAccountClick
+      end
+      object txtOpenSandboxAccount: TEdit
+        Left = 280
+        Height = 23
+        Top = 8
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
+        TextHint = 'account name'
+      end
+      object txtCloseSandboxAccount: TEdit
+        Left = 280
+        Height = 23
+        Top = 56
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
+        TextHint = 'sandbox_account_id'
+      end
+      object txtSandboxPayIn1: TEdit
+        Left = 280
+        Height = 23
+        Top = 104
+        Width = 282
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
+        TextHint = 'sandbox_account_id'
+      end
+      object btnSandboxPayIn: TButton
+        Left = 8
+        Height = 30
+        Top = 104
+        Width = 240
+        Caption = 'SandboxPayIn'
+        DoubleBuffered = True
+        Font.Style = [fsBold]
+        ParentDoubleBuffered = False
+        ParentFont = False
+        TabOrder = 5
+        OnClick = btnSandboxPayInClick
+      end
+      object txtSandboxPayIn2: TEdit
+        Left = 584
+        Height = 23
+        Top = 104
+        Width = 122
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 6
+        TextHint = 'moneyval'
+      end
+      object txtSandboxPayIn3: TEdit
+        Left = 728
+        Height = 23
+        Top = 104
+        Width = 80
+        Color = clYellow
+        Font.Style = [fsBold]
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 7
+        TextHint = 'currency'
       end
     end
   end

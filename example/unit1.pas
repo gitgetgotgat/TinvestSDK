@@ -15,8 +15,11 @@ type
 
   TForm1 = class(TForm)
     btnCancelOrder: TButton;
+    btnCloseSandboxAccount: TButton;
     btnGetAssetFundamentals: TButton;
     btnGetAssets: TButton;
+    btnOpenSandboxAccount: TButton;
+    btnSandboxPayIn: TButton;
     btnStructuredNotes: TButton;
     btnGetBrands: TButton;
     btnGetOperationsByCursor: TButton;
@@ -113,6 +116,7 @@ type
     TabSheet28: TTabSheet;
     TabSheet29: TTabSheet;
     TabSheet30: TTabSheet;
+    TabSheet31: TTabSheet;
     TabSteet29: TTabSheet;
     TabSheet3: TTabSheet;
     TabSheet4: TTabSheet;
@@ -124,6 +128,7 @@ type
     txtCancelOrder1: TEdit;
     txtCancelOrder2: TEdit;
     txtCancelStopOrder2: TEdit;
+    txtCloseSandboxAccount: TEdit;
     txtGetOperationsByCursor2: TEdit;
     txtGetOperationsByCursor4: TEdit;
     txtGetOperationsByCursor3: TEdit;
@@ -150,6 +155,7 @@ type
     txtGetTechAnalysis7: TEdit;
     txtGetTechAnalysis8: TEdit;
     txtGetTradingStatus: TEdit;
+    txtOpenSandboxAccount: TEdit;
     txtPostOrder5: TEdit;
     txtPostStopOrder3: TEdit;
     txtPostStopOrder2: TEdit;
@@ -176,10 +182,14 @@ type
     txtPostStopOrder6: TEdit;
     txtPostStopOrder7: TEdit;
     txtGetOperationsByCursor1: TEdit;
+    txtSandboxPayIn1: TEdit;
+    txtSandboxPayIn2: TEdit;
+    txtSandboxPayIn3: TEdit;
     txtToken: TEdit;
     Memo1: TMemo;
     procedure btnCancelOrderClick(Sender: TObject);
     procedure btnCancelStopOrderClick(Sender: TObject);
+    procedure btnCloseSandboxAccountClick(Sender: TObject);
     procedure btnGetAssetsClick(Sender: TObject);
     procedure btnGetBrandsClick(Sender: TObject);
     procedure btnGetCandlesClick(Sender: TObject);
@@ -206,8 +216,10 @@ type
     procedure btnGetTechAnalysisClick(Sender: TObject);
     procedure btnGetTradingStatusClick(Sender: TObject);
     procedure btnGetTradingStatusesClick(Sender: TObject);
+    procedure btnOpenSandboxAccountClick(Sender: TObject);
     procedure btnPostOrderClick(Sender: TObject);
     procedure btnPostStopOrderClick(Sender: TObject);
+    procedure btnSandboxPayInClick(Sender: TObject);
     procedure btnStructuredNotesClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -408,9 +420,6 @@ var
   gd_in  : gd_request;
   gd_out : gd_response;
 
-  geo_in  : geo_request;
-  geo_out : geo_response;
-
   gmv_in  : gmv_request;
   gmv_out : gmv_response;
 
@@ -441,6 +450,14 @@ var
   glp_in : glp_request;
   glp_out : glp_response;
 
+  osa_in : osa_request;
+  osa_out : osa_response;
+
+  csa_in : csa_request;
+  csa_out : csa_response;
+
+  spi_in : spi_request;
+  spi_out : spi_response;
 
 implementation
 
@@ -472,7 +489,6 @@ begin
   memo1.Lines.add(inttostr(i) + #9 + s_out.s_instruments[i].s_isin + #9 +
                                      s_out.s_instruments[i].s_ticker + #9 +
                                      s_out.s_instruments[i].s_exchange + #9 +
-                                     s_out.s_instruments[i].s_figi + #9 +
                                      s_out.s_instruments[i].s_uid + #9 +
                                      'lots: ' + #9 + inttostr(s_out.s_instruments[i].s_lot) + #9 +
                                      s_out.s_instruments[i].s_name + #9 +
@@ -510,8 +526,7 @@ begin
 
   while i <= f_count do  begin
 
-        memo1.Lines.add(inttostr(i) + #9 + f_out.f_instruments[i].f_figi + #9 +
-                                           f_out.f_instruments[i].f_uid + #9 +
+        memo1.Lines.add(inttostr(i) + #9 + f_out.f_instruments[i].f_uid + #9 +
                                            'lots: ' + #9 + inttostr(f_out.f_instruments[i].f_lot) + #9 +
                                            f_out.f_instruments[i].f_exchange + #9 +
                                            f_out.f_instruments[i].f_name + #9 +
@@ -538,8 +553,7 @@ begin
 
   GetInstrumentBy(gib_in, gib_out);
 
-  memo1.Text := gib_out.gib_instrument.gib_figi + #13 +
-                gib_out.gib_instrument.gib_ticker + #13 +
+  memo1.Text := gib_out.gib_instrument.gib_ticker + #13 +
                 gib_out.gib_instrument.gib_classCode + #13 +
                 gib_out.gib_instrument.gib_isin + #13 +
                 inttostr(gib_out.gib_instrument.gib_lot) + #13 +
@@ -634,8 +648,7 @@ begin
   i := 0;
 
   for i := 0 to (count_uids-1) do begin
-     memo1.Lines.add(glp_out.glp_lastPrices[i].glp_figi + #9 +
-                     glp_out.glp_lastPrices[i].glp_instrumentUid + #9 +
+     memo1.Lines.add(glp_out.glp_lastPrices[i].glp_instrumentUid + #9 +
                      floattostr(glp_out.glp_lastPrices[i].glp_price) + #9 +
                      glp_out.glp_lastPrices[i].glp_lastPriceType + #9 +
                      glp_out.glp_lastPrices[i].glp_time
@@ -843,6 +856,18 @@ begin
   memo1.Text := cso_out.cso_time + #13 + inttostr(cso_out.cso_error_code);
 end;
 
+procedure TForm1.btnCloseSandboxAccountClick(Sender: TObject);
+begin
+
+    csa_in.csa_token := txtToken.Text;
+    csa_in.csa_accountId := txtCloseSandboxAccount.Text;
+
+    CloseSandboxAccount(csa_in, csa_out);
+
+    memo1.Lines.Add(csa_out.csa_x_tracking_id);
+
+end;
+
 procedure TForm1.btnGetAssetsClick(Sender: TObject);
 var
 
@@ -968,8 +993,7 @@ begin
    i := 0;
 
    for i := 0 to (count_uids-1) do begin
-      memo1.Lines.add(gcp_out.gcp_closePrices[i].gcp_figi + #9 +
-                      gcp_out.gcp_closePrices[i].gcp_instrumentUid + #9 +
+      memo1.Lines.add(gcp_out.gcp_closePrices[i].gcp_instrumentUid + #9 +
                       floattostr(gcp_out.gcp_closePrices[i].gcp_price) + #9 +
                       floattostr(gcp_out.gcp_closePrices[i].gcp_eveningSessionPrice) + #9 +
                       gcp_out.gcp_closePrices[i].gcp_time
@@ -996,7 +1020,7 @@ begin
 
   while i <= go_count do  begin
 
-     memo1.Text := memo1.Text + go_out.go_orders[i].go_orderId + #9 + go_out.go_orders[i].go_figi + #9 + go_out.go_orders[i].go_orderDate + #13;
+     memo1.Text := memo1.Text + go_out.go_orders[i].go_orderId + #9 + go_out.go_orders[i].go_orderDate + #13;
 
   inc(i);
   end;
@@ -1108,7 +1132,6 @@ begin
         memo1.Lines.add(inttostr(i) + #9 + b_out.b_instruments[i].b_isin + #9 +
                                            b_out.b_instruments[i].b_ticker + #9 +
                                            b_out.b_instruments[i].b_exchange + #9 +
-                                           b_out.b_instruments[i].b_figi + #9 +
                                            b_out.b_instruments[i].b_uid + #9 +
                                            'lots: ' + #9 + inttostr(b_out.b_instruments[i].b_lot) + #9 +
                                            b_out.b_instruments[i].b_name  + #9 +
@@ -1154,7 +1177,6 @@ begin
   memo1.Lines.add(inttostr(i) + #9 + e_out.e_instruments[i].e_isin + #9 +
                                      e_out.e_instruments[i].e_ticker + #9 +
                                      e_out.e_instruments[i].e_exchange + #9 +
-                                     e_out.e_instruments[i].e_figi + #9 +
                                      e_out.e_instruments[i].e_uid + #9 +
                                      'lots: ' + #9 + inttostr(e_out.e_instruments[i].e_lot) + #9 +
                                      e_out.e_instruments[i].e_name + #9 +
@@ -1196,7 +1218,6 @@ begin
 
         memo1.Lines.add(inttostr(i) + #9 +
                         fi_out.fi_instruments[i].fi_isin + #9 +
-                        fi_out.fi_instruments[i].fi_figi + #9 +
                         fi_out.fi_instruments[i].fi_ticker + #9 +
                         fi_out.fi_instruments[i].fi_classCode + #9 +
                         fi_out.fi_instruments[i].fi_instrumentType + #9 +
@@ -1247,7 +1268,6 @@ begin
 
         memo1.Lines.add(inttostr(i) + #9 + gso_out.gso_stopOrders[i].gso_stopOrderId + #9 +
                                            inttostr(gso_out.gso_stopOrders[i].gso_lotsRequested)  + #9 +
-                                           gso_out.gso_stopOrders[i].gso_figi + #9 +
                                            gso_out.gso_stopOrders[i].gso_direction + #9 +
                                            gso_out.gso_stopOrders[i].gso_currency + #9 +
                                            gso_out.gso_stopOrders[i].gso_orderType + #9 +
@@ -1496,8 +1516,7 @@ begin
   i := 0;
 
   while i <= count_statusesfact do  begin
-     memo1.Lines.add(gtss_out.gtss_tradingStatuses[i].gtss_figi + #9 +
-                     gtss_out.gtss_tradingStatuses[i].gtss_tradingStatus + #9 +
+     memo1.Lines.add(gtss_out.gtss_tradingStatuses[i].gtss_tradingStatus + #9 +
                      gtss_out.gtss_tradingStatuses[i].gtss_ticker + #9 +
                      gtss_out.gtss_tradingStatuses[i].gtss_classCode + #9 +
                      booltostr(gtss_out.gtss_tradingStatuses[i].gtss_apiTradeAvailableFlag, 'true', 'false')
@@ -1505,6 +1524,17 @@ begin
      inc(i);
   end;
 
+end;
+
+procedure TForm1.btnOpenSandboxAccountClick(Sender: TObject);
+begin
+  osa_in.osa_token := txtToken.Text;
+  osa_in.osa_name := txtOpenSandboxAccount.Text;
+
+  OpenSandboxAccount(osa_in, osa_out);
+
+  memo1.Lines.Add(osa_out.osa_accountId);
+  memo1.Lines.Add(osa_out.osa_x_tracking_id);
 end;
 
 procedure TForm1.btnPostOrderClick(Sender: TObject);
@@ -1560,6 +1590,21 @@ begin
 
 end;
 
+procedure TForm1.btnSandboxPayInClick(Sender: TObject);
+begin
+
+    spi_in.spi_token := txtToken.Text;
+    spi_in.spi_accountId := txtSandboxPayIn1.Text;
+    spi_in.spi_amount.moneyval := strtofloat(txtSandboxPayIn2.Text);
+    spi_in.spi_amount.currency := txtSandboxPayIn3.Text;
+
+    SandboxPayIn(spi_in, spi_out);
+
+    memo1.Lines.Add(floattostr(spi_out.spi_balance.moneyval));
+    memo1.Lines.Add(spi_out.spi_x_tracking_id);
+
+end;
+
 procedure TForm1.btnStructuredNotesClick(Sender: TObject);
 var
 
@@ -1584,7 +1629,6 @@ begin
         memo1.Lines.add(inttostr(i) + #9 + sn_out.sn_instruments[i].sn_isin + #9 +
                                            sn_out.sn_instruments[i].sn_ticker + #9 +
                                            sn_out.sn_instruments[i].sn_exchange + #9 +
-                                           sn_out.sn_instruments[i].sn_figi + #9 +
                                            sn_out.sn_instruments[i].sn_uid + #9 +
                                            'lots: ' + #9 + inttostr(sn_out.sn_instruments[i].sn_lot) + #9 +
                                            'issueSize: ' + #9 + inttostr(sn_out.sn_instruments[i].sn_issueSize) + #9 +
