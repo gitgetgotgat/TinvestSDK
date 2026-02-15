@@ -6207,7 +6207,7 @@ var
    Client: TFPHttpClient;
    Response: TStringStream;
    status_code : int64;
-   json_base, json_price, json_stopPrice, json_indent, json_trailingData, json_spread, json_nested1  : TJSONObject;
+   json_base, json_price, json_stopPrice, json_indent, json_trailingData, json_spread  : TJSONObject;
 
 begin
    try
@@ -6222,7 +6222,6 @@ begin
       json_indent := TJSONObject.Create;
       json_trailingData := TJSONObject.Create;
       json_spread := TJSONObject.Create;
-      json_nested1 := TJSONObject.Create;
 
       if pso_input.pso_quantity > 0 then json_base.Add('quantity', pso_input.pso_quantity);
       if pso_input.pso_price >0 then begin
@@ -6251,7 +6250,7 @@ begin
       json_spread.Add('units', Trunc(pso_input.pso_trailingData.pso_spread));
       json_trailingData.Add('spread', json_spread);
       json_trailingData.Add('spreadType', pso_input.pso_trailingData.pso_spreadType);
-      json_nested1.Add('trailingData', json_trailingData);
+      json_base.Add('trailingData', json_trailingData);
       if pso_input.pso_orderId <> '' then json_base.Add('orderId', pso_input.pso_orderId);
       if pso_input.pso_confirmMarginTrade <> false then json_base.Add('confirmMarginTrade', pso_input.pso_confirmMarginTrade);
 
