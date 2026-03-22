@@ -977,6 +977,7 @@ type
       pso_priceType : string;                                                                                   // Тип цены [PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
       pso_orderId : string;                                                                                     // Идентификатор запроса выставления поручения для целей идемпотентности в формате UID. Максимальная длина — 36 символов
       pso_confirmMarginTrade : boolean;                                                                         // Согласие на выставление заявки, которая может привести к непокрытой позиции, по умолчанию false
+      pso_instantExecution : boolean;                                                                           // Признак необходимости моментальной активации, используется только для трейлинг-стопа
       pso_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
    pso_responseMetadataStruct = record
@@ -2773,6 +2774,95 @@ type
       spi_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
    end;
 
+   // Структуры для процедуры GetAccountValues
+   gav_request = record                                                                                         // Запрос для GetAccountValues
+      gav_token : string;                                                                                       // Токен
+      gav_accounts : array of string;                                                                           // Массив счетов пользователя
+      gav_values : array of string;                                                                             // Массив запрашиваемых параметров [ACCOUNT_VALUE_MARGIN_FEE, ACCOUNT_VALUE_AMOUNT_WITHOUT_EXTRA_FEE]
+   end;
+
+   gav_valuesStruct =record
+      gav_name : string;                                                                                        // Тип запрашиваемого параметра
+      gav_value : MoneyStruct;                                                                                  // Денежная сумма в определенной валюте
+   end;
+
+   gav_accountsStruct = record
+      gav_accountId : string;                                                                                   // Номер счета
+      gav_values : array of gav_valuesStruct;                                                                   // Массив параметров инструмента
+   end;
+
+   gav_response = record                                                                                        // Ответ для GetAccountValues
+      gav_accounts : array of gav_accountsStruct;                                                               // Массив счетов с параметрами
+      gav_error_code : int64;                                                                                   // Уникальный идентификатор ошибки
+      gav_error_message : string;                                                                               // Пользовательское сообщение об ошибке
+      gav_error_description : int64;                                                                            // Код ошибки
+      gav_x_tracking_id : string;                                                                               // grpc-metadata-x-tracking-id для служебных целей
+   end;
+
+   // Структуры для процедуры DfaBy
+   db_request = record                                                                                          // Запрос для DfaBy
+      db_token : string;                                                                                        // Токен
+      db_idType : string;                                                                                       // Тип идентификатора инструмента [INSTRUMENT_ID_TYPE_TICKER, INSTRUMENT_ID_TYPE_UID, INSTRUMENT_ID_TYPE_POSITION_UID, INSTRUMENT_ID_TYPE_ID]
+      db_classCode : string;                                                                                    // Класс-код (секция торгов). Обязательный, если id_type = INSTRUMENT_ID_TYPE_TICKER
+      db_id : string;                                                                                           // Идентификатор запрашиваемого инструмента
+   end;
+
+   db_forecastYieldStruct = record
+      db_minValue : double;                                                                                     // Минимальное значение прогнозной доходности в %
+      db_maxValue : double;                                                                                     // Максимальное значение прогнозной доходности в %
+   end;
+
+   db_instrumentStruct = record
+      db_uid : string;                                                                                          // Уникальный идентификатор инструмента
+      db_ticker : string;                                                                                       // Тикер инструмента
+      db_name : string;                                                                                         // Название инструмента
+      db_positionUid : string;                                                                                  // Уникальный идентификатор позиции
+      db_minPriceIncrement : double;                                                                            // Шаг цены
+      db_lot : int64;                                                                                           // Количество лотов
+      db_nominal : MoneyStruct;                                                                                 // Номинал
+      db_currency : string;                                                                                     // Валюта
+      db_maturityDate : string;                                                                                 // Дата погашения ЦФА в формате UTC
+      db_shortEnabledFlag : boolean;                                                                            // Признак доступности для операций шорт
+      db_apiTradeAvailableFlag : boolean;                                                                       // Признак доступности торгов по бумаге через API
+      db_buyAvailableFlag : boolean;                                                                            // Признак доступности для покупки
+      db_sellAvailableFlag : boolean;                                                                           // Признак доступности для продажи
+      db_limitOrderAvailableFlag : boolean;                                                                     // Признак доступности выставления лимитной заявки по инструменту
+      db_marketOrderAvailableFlag : boolean;                                                                    // Признак доступности выставления рыночной заявки по инструменту
+      db_bestpriceOrderAvailableFlag : boolean;                                                                 // Признак доступности выставления bestprice заявки по инструменту
+      db_forIisFlag : boolean;                                                                                  // Возможность покупки/продажи на ИИС
+      db_forQualInvestorFlag : boolean;                                                                         // Флаг отображающий доступность торговли инструментом только для квалифицированных инвесторов
+      db_type : string;                                                                                         // Тип актива. Возможные значения: credit_portfolio_dfa, debt_dfa
+      db_basicAssets : array of string;                                                                         // Базовые активы, входящие в ЦФА
+      db_forecastYield : db_forecastYieldStruct;                                                                // Прогнозная доходность смарт-портфелей
+      db_yieldToMaturity : double;                                                                              // Доходность к погашению в %
+      db_couponValue : double;                                                                                  // Величина купона
+      db_couponPaymentFrequency : int64;                                                                        // Количество выплат в год
+      db_couponPaymentDate : string;                                                                            // Дата выплаты купона
+      db_aciValue : double;                                                                                     // Значение НКД (накопленного купонного дохода) на дату
+   end;
+
+   db_response = record                                                                                         // Ответ для DfaBy
+      db_instrument : db_instrumentStruct;                                                                      // инструмент
+      db_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
+      db_error_message : string;                                                                                // Пользовательское сообщение об ошибке
+      db_error_description : int64;                                                                             // Код ошибки
+      db_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
+   end;
+
+   // Структуры для процедуры Dfas
+   d_request = record                                                                                           // Запрос для Dfas
+      d_token : string;                                                                                         // Токен
+   end;
+
+   d_response = record                                                                                          // Ответ для Dfas
+      d_instruments : array of db_instrumentStruct;                                                             // массив инструментов
+      d_error_code : int64;                                                                                     // Уникальный идентификатор ошибки
+      d_error_message : string;                                                                                 // Пользовательское сообщение об ошибке
+      d_error_description : int64;                                                                              // Код ошибки
+      d_x_tracking_id : string;                                                                                 // grpc-metadata-x-tracking-id для служебных целей
+   end;
+
+
 
 
 {InstrumentsService}
@@ -2780,6 +2870,8 @@ procedure CreateFavoriteGroup (cfg_input : cfg_request; out cfg_output : cfg_res
 procedure Currencies (c_input : c_request; out c_output : c_response);                                          // список валют
 procedure CurrencyBy (cb_input : cb_request; out cb_output : cb_response);                                      // получить валюту по ее идентификатору
 procedure DeleteFavoriteGroup (dfg_input : dfg_request; out dfg_output : dfg_response);                         // удалить группу избранных инструментов
+procedure DfaBy (db_input : db_request; out db_output : db_response);                                           // получить цифровой актив по ее идентификатору
+procedure Dfas (d_input : d_request; out d_output : d_response);                                                // список цифровых активов
 procedure EditFavorites (ef_input : ef_request; out ef_output : ef_response);                                   // отредактировать список избранных инструментов
 procedure FindInstrument (fi_input : fi_request; out fi_output : fi_response);                                  // найти инструмент
 procedure GetAccruedInterests (gai_input : gai_request; out gai_output : gai_response);                         // накопленный купонный доход по облигации
@@ -2852,6 +2944,7 @@ procedure PostStopOrder (pso_input : pso_request; out pso_output : pso_response)
 
 {UsersService}
 procedure CurrencyTransfer (cut_input : cut_request; out cut_output : cut_response);                            // перевод денежных средств между счетами
+procedure GetAccountValues (gav_input : gav_request; out gav_output : gav_response);                            // метод получения дополнительных параметров по счету. Он позволяет получить текущую комиссию за маржинальное кредитование и остаток лимита в рамках текущей комиссии.
 procedure GetAccounts (ga_input : ga_request; out ga_output : ga_response);                                     // счета пользователя
 procedure GetBankAccounts (gba_input : gba_request; out gba_output : gba_response);                             // банковские счета пользователя
 procedure GetInfo (gi_input : gi_request; out gi_output : gi_response);                                         // информация о пользователе
@@ -2977,8 +3070,8 @@ begin
 
       try
          Client.Post(endpoint_url, Response);
-      except on E: Exception do
-
+      except
+         ga_output := default(ga_response);
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -3069,7 +3162,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gp_output := default(gp_response);
       end;
 
       requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -3235,7 +3328,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gobc_output := default(gobc_response);
       end;
 
       requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -3383,7 +3476,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         b_output := default(b_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -3548,7 +3641,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         s_output := default(s_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -3698,7 +3791,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         f_output := default(f_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -3852,7 +3945,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         e_output := default(e_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -4002,7 +4095,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         fi_output := default(fi_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -4098,7 +4191,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         bb_output := default(bb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -4256,7 +4349,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         eb_output := default(eb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -4397,7 +4490,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         fb_output := default(fb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -4543,7 +4636,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         sb_output := default(sb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -4685,7 +4778,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gib_output := default(gib_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -4820,7 +4913,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gc_output := default(gc_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -4912,7 +5005,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gob_output := default(gob_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5046,7 +5139,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gta_output := default(gta_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5135,7 +5228,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gts_output := default(gts_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5216,7 +5309,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         go_output := default(go_response);
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5345,7 +5438,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gcp_output := default(gcp_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5440,7 +5533,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         glp_output := default(glp_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5532,7 +5625,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gos_output := default(gos_response);
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5646,7 +5739,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         co_output := default(co_response);
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5730,7 +5823,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gml_output := default(gml_response);
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5827,7 +5920,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         po_output := default(po_response);
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -5948,7 +6041,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         poa_output := default(poa_response);
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6029,7 +6122,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gop_output := default(gop_response);
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6135,7 +6228,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         ro_output := default(ro_response);
       end;
 
       requests_limit.OrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6251,8 +6344,10 @@ begin
       json_trailingData.Add('spread', json_spread);
       json_trailingData.Add('spreadType', pso_input.pso_trailingData.pso_spreadType);
       json_base.Add('trailingData', json_trailingData);
+
       if pso_input.pso_orderId <> '' then json_base.Add('orderId', pso_input.pso_orderId);
       if pso_input.pso_confirmMarginTrade <> false then json_base.Add('confirmMarginTrade', pso_input.pso_confirmMarginTrade);
+      if pso_input.pso_instantExecution <> false then json_base.Add('instantExecution', pso_input.pso_instantExecution);
 
       json_request := json_base.AsJSON;
 
@@ -6276,7 +6371,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         pso_output := default(pso_response);
       end;
 
       requests_limit.StopOrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6356,7 +6451,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gso_output := default(gso_response);
       end;
 
       requests_limit.StopOrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6466,7 +6561,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         cso_output := default(cso_response);
       end;
 
       requests_limit.StopOrdersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6540,7 +6635,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         glt_output := default(glt_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6622,7 +6717,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gi_output := default(gi_response);
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6706,7 +6801,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gma_output := default(gma_response);
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6789,7 +6884,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         cfg_output := default(cfg_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6860,7 +6955,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         dfg_output := default(dfg_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -6945,7 +7040,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gfg_output := default(gfg_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7032,7 +7127,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gai_output := default(gai_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7117,7 +7212,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         ts_output := default(ts_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7240,7 +7335,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gut_output := default(gut_response);
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7350,7 +7445,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gba_output := default(gba_response);
       end;
 
       requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7396,7 +7491,6 @@ begin
 
                inc(i);
             end;
-
          end;
       end;
    finally
@@ -7448,7 +7542,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         c_output := default(c_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7589,7 +7683,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         cb_output := default(cb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7722,7 +7816,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gbc_output := default(gbc_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7813,7 +7907,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gbe_output := default(gbe_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -7930,7 +8024,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gaf_output := default(gaf_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8120,7 +8214,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gas_output := default(gas_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8231,7 +8325,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gar_output := default(gar_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8319,7 +8413,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gep_output := default(gep_response);
       end;
 
       requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8467,7 +8561,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gb_output := default(gb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8557,7 +8651,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gbb_output := default(gbb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8643,7 +8737,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gtss_output := default(gtss_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8731,7 +8825,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         ges_output := default(ges_response);
       end;
 
       requests_limit.SignalService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8833,7 +8927,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gsi_output := default(gsi_response);
       end;
 
       requests_limit.SignalService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -8942,7 +9036,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         cut_output := default(cut_response);
       end;
 
       requests_limit.Currency_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9021,7 +9115,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         pi_output := default(pi_response);
       end;
 
       requests_limit.Currency_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9096,7 +9190,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gwl_output := default(gwl_response);
       end;
 
       requests_limit.OperationsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9210,7 +9304,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gbr_output := default(gbr_response);
       end;
 
       requests_limit.Report_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9333,7 +9427,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         ind_output := default(ind_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9415,7 +9509,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gco_output := default(gco_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9496,7 +9590,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gfm_output := default(gfm_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9573,7 +9667,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gfb_output := default(gfb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9683,7 +9777,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         grr_output := default(grr_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9794,7 +9888,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gcf_output := default(gcf_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -9888,7 +9982,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         sn_output := default(sn_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -10060,7 +10154,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         snb_output := default(snb_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -10235,7 +10329,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gdfi_output := default(gdfi_response);
       end;
 
       requests_limit.Report_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -10345,7 +10439,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         o_output := default(o_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -10494,7 +10588,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         ob_output := default(ob_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -10635,7 +10729,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gid_output := default(gid_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -10737,7 +10831,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         ef_output := default(ef_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -10826,7 +10920,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gf_output := default(gf_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -10915,7 +11009,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gab_output := default(gab_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -11163,7 +11257,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gd_output := default(gd_response);
       end;
 
       requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -11267,7 +11361,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         gmv_output := default(gmv_response);
       end;
 
       requests_limit.MarketDataService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -11292,7 +11386,7 @@ begin
             SetLength(gmv_output.gmv_instruments, instruments_count);
             k := 0;
 
-            while k < instruments_count do  begin
+            while k < instruments_count do begin
                gmv_output.gmv_instruments[k].gmv_instrumentUid := JSN.FindPath('instruments[' + inttostr(k) + '].instrumentUid').AsString;
 
                json_output_array := TJSONArray(JSN.FindPath('instruments[' + inttostr(k) + '].values'));
@@ -11300,7 +11394,7 @@ begin
                SetLength(gmv_output.gmv_instruments[k].gmv_values, values_count);
                l := 0;
 
-               while l < values_count do  begin
+               while l < values_count do begin
                   gmv_output.gmv_instruments[k].gmv_values[l].gmv_type := JSN.FindPath('instruments[' + inttostr(k) + '].values[' + inttostr(l) + '].type').AsString;
                   gmv_output.gmv_instruments[k].gmv_values[l].gmv_value := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(k) + '].values[' + inttostr(l) + '].value.units').AsInt64, JSN.FindPath('instruments[' + inttostr(k) + '].values[' + inttostr(l) + '].value.nano').AsInt64);
                   gmv_output.gmv_instruments[k].gmv_values[l].gmv_time := JSN.FindPath('instruments[' + inttostr(k) + '].values[' + inttostr(l) + '].time').AsString;
@@ -11360,7 +11454,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         osa_output := default(osa_response);
       end;
 
       requests_limit.SandboxService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -11429,7 +11523,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         csa_output := default(csa_response);
       end;
 
       requests_limit.SandboxService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -11506,7 +11600,7 @@ begin
       try
          Client.Post(endpoint_url, Response);
       except on E: Exception do
-
+         spi_output := default(spi_response);
       end;
 
       requests_limit.SandboxService_limit := ParseHeaders(Client.ResponseHeaders.Text);
@@ -11525,7 +11619,7 @@ begin
          end;
 
          if spi_output.spi_error_description = 0 then begin
-            spi_output.spi_balance.moneyval := UnitsNanoToDouble(JSN.FindPath('balance.units').AsInt64 , JSN.FindPath('balance.nano').AsInt64);;
+            spi_output.spi_balance.moneyval := UnitsNanoToDouble(JSN.FindPath('balance.units').AsInt64 , JSN.FindPath('balance.nano').AsInt64);
             spi_output.spi_balance.currency := JSN.FindPath('balance.currency').AsString;
          end;
       end;
@@ -11538,7 +11632,357 @@ begin
    end;
 end;
 
+procedure GetAccountValues (gav_input : gav_request; out gav_output : gav_response);
+var
+   JSN: TJSONData;
+   endpoint_url, json_output_struct, json_request : string;
+   Client: TFPHttpClient;
+   Response: TStringStream;
+   status_code, numb_accounts, numb_values, i, j, accounts_count, values_count : int64;
+   json_base : TJSONObject;
+   json_accounts_array, json_values_array, json_output_array : TJSONArray;
+begin
+   try
+      if requests_limit.UsersService_limit.h_ratelimit_remaining <= 1 then begin
+        Sleep(requests_limit.UsersService_limit.h_ratelimit_reset * 1000);
+        requests_limit.UsersService_limit.h_ratelimit_remaining := requests_limit.UsersService_limit.h_ratelimit_limit - 1;
+      end;
 
+      json_base := TJSONObject.Create;
+      json_accounts_array := TJSONArray.Create;
+      json_values_array := TJSONArray.Create;
+
+      endpoint_url := url_prod + 'UsersService/GetAccountValues';
+
+      numb_accounts := high(gav_input.gav_accounts);
+      numb_values := high(gav_input.gav_values);
+
+      for i := 0 to numb_accounts do begin
+         json_accounts_array.Add(gav_input.gav_accounts[i]);
+      end;
+      for j := 0 to numb_values do begin
+         json_values_array.Add(gav_input.gav_values[j]);
+      end;
+
+      json_base.Add('accounts', json_accounts_array);
+      json_base.Add('values', json_values_array);
+
+      json_request := json_base.AsJSON;
+
+      InitSSLInterface;
+      Client := TFPHttpClient.Create(nil);
+      Client.AllowRedirect:=true;
+      Client.AddHeader('Content-Type', 'application/json');
+      Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
+      Client.AddHeader('Authorization', 'Bearer ' + gav_input.gav_token);
+
+      Client.AllowRedirect := true;
+      Client.RequestBody := TRawByteStringStream.Create(json_request);
+      Response := TStringStream.Create('');
+
+      try
+         Client.Post(endpoint_url, Response);
+      except on E: Exception do
+         gav_output := default(gav_response);
+      end;
+
+      requests_limit.UsersService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gav_output.gav_x_tracking_id := requests_limit.UsersService_limit.h_tracking_id;
+
+      status_code := Client.ResponseStatusCode;
+
+      if status_code <> 0 then begin
+
+         SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
+
+         JSN := GetJSON(json_output_struct);
+
+         if JSN.FindPath('description') <> nil then begin
+            gav_output.gav_error_code := JSN.FindPath('code').AsInt64;
+            gav_output.gav_error_message := JSN.FindPath('message').AsString;
+            gav_output.gav_error_description := JSN.FindPath('description').AsInt64;
+         end;
+
+         if gav_output.gav_error_description = 0 then begin
+            json_output_array := TJSONArray(JSN.FindPath('accounts'));
+            accounts_count := json_output_array.Count;
+            SetLength(gav_output.gav_accounts, accounts_count);
+            i := 0;
+
+            while i < accounts_count do begin
+               gav_output.gav_accounts[i].gav_accountId := JSN.FindPath('accounts[' + inttostr(i) + '].accountId').AsString;
+
+               json_output_array := TJSONArray(JSN.FindPath('accounts[' + inttostr(i) + '].values'));
+               values_count := json_output_array.Count;
+               SetLength(gav_output.gav_accounts[i].gav_values, values_count);
+               j := 0;
+
+               while j < values_count do begin
+                  gav_output.gav_accounts[i].gav_values[j].gav_name := JSN.FindPath('accounts[' + inttostr(i) + '].values[' + inttostr(j) + '].name').AsString;
+                  gav_output.gav_accounts[i].gav_values[j].gav_value.moneyval := UnitsNanoToDouble(JSN.FindPath('accounts[' + inttostr(i) + '].values[' + inttostr(j) + '].value.units').AsInt64 , JSN.FindPath('accounts[' + inttostr(i) + '].values[' + inttostr(j) + '].value.nano').AsInt64);
+                  gav_output.gav_accounts[i].gav_values[j].gav_value.currency := JSN.FindPath('accounts[' + inttostr(i) + '].values[' + inttostr(j) + '].value.currency').AsString;
+                  inc(j);
+               end;
+               inc(i);
+            end;
+         end;
+      end;
+   finally
+      Client.RequestBody.Free;
+      Client.Free;
+      Response.Free;
+      json_base.Free;
+      if status_code <> 0 then JSN.Free;
+    end;
+end;
+
+procedure DfaBy (db_input : db_request; out db_output : db_response);
+var
+   JSN: TJSONData;
+   basicAssets_array : TJSONArray;
+   endpoint_url, json_output_struct, json_request : string;
+   Client: TFPHttpClient;
+   Response: TStringStream;
+   status_code, assets_count, i : int64;
+   json_base : TJSONObject;
+begin
+   try
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
+        Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
+        requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
+      end;
+
+      json_base := TJSONObject.Create;
+
+      if db_input.db_idType <> '' then json_base.Add('idType', db_input.db_idType);
+      if db_input.db_classCode <> '' then json_base.Add('classCode', db_input.db_classCode);
+      if db_input.db_id <> '' then json_base.Add('id', db_input.db_id);
+
+      endpoint_url := url_prod + 'InstrumentsService/DfaBy';
+      json_request := json_base.AsJSON;
+
+      InitSSLInterface;
+      Client := TFPHttpClient.Create(nil);
+      Client.AllowRedirect:=true;
+      Client.AddHeader('Content-Type', 'application/json');
+      Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
+      Client.AddHeader('Authorization', 'Bearer ' + db_input.db_token);
+
+      Client.AllowRedirect := true;
+      Client.RequestBody := TRawByteStringStream.Create(json_request);
+      Response := TStringStream.Create('');
+
+      try
+         Client.Post(endpoint_url, Response);
+      except on E: Exception do
+         db_output := default(db_response);
+      end;
+
+      requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      db_output.db_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
+
+      status_code := Client.ResponseStatusCode;
+      if status_code <> 0 then begin
+
+         SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
+
+         JSN := GetJSON(json_output_struct);
+
+         if JSN.FindPath('description') <> nil then begin
+            db_output.db_error_code := JSN.FindPath('code').AsInt64;
+            db_output.db_error_message := JSN.FindPath('message').AsString;
+            db_output.db_error_description := JSN.FindPath('description').AsInt64;
+         end;
+
+         if db_output.db_error_description = 0 then begin
+            db_output.db_instrument.db_uid := JSN.FindPath('uid').AsString;
+            db_output.db_instrument.db_ticker := JSN.FindPath('ticker').AsString;
+            db_output.db_instrument.db_name := JSN.FindPath('name').AsString;
+            db_output.db_instrument.db_positionUid := JSN.FindPath('positionUid').AsString;
+            if JSN.FindPath('minPriceIncrement') <> nil then
+               db_output.db_instrument.db_minPriceIncrement := UnitsNanoToDouble(JSN.FindPath('minPriceIncrement.units').AsInt64 , JSN.FindPath('minPriceIncrement.nano').AsInt64);
+            db_output.db_instrument.db_lot := JSN.FindPath('lot').AsInt64;
+            if JSN.FindPath('nominal') <> nil then begin
+               db_output.db_instrument.db_nominal.moneyval := UnitsNanoToDouble(JSN.FindPath('nominal.units').AsInt64 , JSN.FindPath('nominal.nano').AsInt64);
+               db_output.db_instrument.db_nominal.currency := JSN.FindPath('nominal.currency').AsString;
+            end;
+            db_output.db_instrument.db_currency := JSN.FindPath('currency').AsString;
+            db_output.db_instrument.db_maturityDate := JSN.FindPath('maturityDate').AsString;
+            db_output.db_instrument.db_shortEnabledFlag := JSN.FindPath('shortEnabledFlag').AsBoolean;
+            db_output.db_instrument.db_apiTradeAvailableFlag := JSN.FindPath('apiTradeAvailableFlag').AsBoolean;
+            db_output.db_instrument.db_buyAvailableFlag := JSN.FindPath('buyAvailableFlag').AsBoolean;
+            db_output.db_instrument.db_sellAvailableFlag := JSN.FindPath('sellAvailableFlag').AsBoolean;
+            db_output.db_instrument.db_limitOrderAvailableFlag := JSN.FindPath('limitOrderAvailableFlag').AsBoolean;
+            db_output.db_instrument.db_marketOrderAvailableFlag := JSN.FindPath('marketOrderAvailableFlag').AsBoolean;
+            db_output.db_instrument.db_bestpriceOrderAvailableFlag := JSN.FindPath('bestpriceOrderAvailableFlag').AsBoolean;
+            db_output.db_instrument.db_forIisFlag := JSN.FindPath('forIisFlag').AsBoolean;
+            db_output.db_instrument.db_forQualInvestorFlag := JSN.FindPath('forQualInvestorFlag').AsBoolean;
+            db_output.db_instrument.db_type := JSN.FindPath('type').AsString;
+
+            basicAssets_array := TJSONArray(JSN.FindPath('basicAssets'));
+            assets_count := basicAssets_array.Count;
+            SetLength(db_output.db_instrument.db_basicAssets, assets_count);
+            i := 0;
+
+            while i < assets_count do begin
+               db_output.db_instrument.db_basicAssets[i] := JSN.FindPath('basicAssets[' + inttostr(i) + ']').AsString;
+               inc(i);
+            end;
+
+            if JSN.FindPath('forecastYield.minValue') <> nil then
+               db_output.db_instrument.db_forecastYield.db_minValue := UnitsNanoToDouble(JSN.FindPath('forecastYield.minValue.units').AsInt64 , JSN.FindPath('forecastYield.minValue.nano').AsInt64);
+            if JSN.FindPath('forecastYield.maxValue') <> nil then
+               db_output.db_instrument.db_forecastYield.db_maxValue := UnitsNanoToDouble(JSN.FindPath('forecastYield.maxValue.units').AsInt64 , JSN.FindPath('forecastYield.maxValue.nano').AsInt64);
+            if JSN.FindPath('yieldToMaturity') <> nil then
+               db_output.db_instrument.db_yieldToMaturity := UnitsNanoToDouble(JSN.FindPath('yieldToMaturity.units').AsInt64 , JSN.FindPath('yieldToMaturity.nano').AsInt64);
+            if JSN.FindPath('couponValue') <> nil then
+               db_output.db_instrument.db_couponValue := UnitsNanoToDouble(JSN.FindPath('couponValue.units').AsInt64 , JSN.FindPath('couponValue.nano').AsInt64);
+            db_output.db_instrument.db_couponPaymentFrequency := JSN.FindPath('couponPaymentFrequency').AsInt64;
+            db_output.db_instrument.db_couponPaymentDate := JSN.FindPath('couponPaymentDate').AsString;
+            if JSN.FindPath('aciValue') <> nil then
+               db_output.db_instrument.db_aciValue := UnitsNanoToDouble(JSN.FindPath('aciValue.units').AsInt64 , JSN.FindPath('aciValue.nano').AsInt64);
+
+         end;
+      end;
+   finally
+      Client.RequestBody.Free;
+      Client.Free;
+      Response.Free;
+      json_base.Free;
+      if status_code <> 0 then JSN.Free;
+   end;
+end;
+
+procedure Dfas (d_input : d_request; out d_output : d_response);
+var
+   JSN: TJSONData;
+   json_output_array, basicAssets_array : TJSONArray;
+   endpoint_url, json_output_struct, json_request : string;
+   Client: TFPHttpClient;
+   Response: TStringStream;
+   status_code, instruments_count, assets_count, i, j : int64;
+   json_base : TJSONObject;
+begin
+   try
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
+        Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
+        requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
+      end;
+
+      json_base := TJSONObject.Create;
+
+      endpoint_url := url_prod + 'InstrumentsService/Dfas';
+      json_request := '{}';
+
+      InitSSLInterface;
+      Client := TFPHttpClient.Create(nil);
+      Client.AllowRedirect:=true;
+      Client.AddHeader('Content-Type', 'application/json');
+      Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
+      Client.AddHeader('Authorization', 'Bearer ' + d_input.d_token);
+
+      Client.AllowRedirect := true;
+      Client.RequestBody := TRawByteStringStream.Create(json_request);
+      Response := TStringStream.Create('');
+
+      try
+         Client.Post(endpoint_url, Response);
+      except on E: Exception do
+         d_output := default(d_response);
+      end;
+
+      requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      d_output.d_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
+
+      status_code := Client.ResponseStatusCode;
+      if status_code <> 0 then begin
+
+         SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
+
+         JSN := GetJSON(json_output_struct);
+
+         if JSN.FindPath('description') <> nil then begin
+            d_output.d_error_code := JSN.FindPath('code').AsInt64;
+            d_output.d_error_message := JSN.FindPath('message').AsString;
+            d_output.d_error_description := JSN.FindPath('description').AsInt64;
+         end;
+
+         if d_output.d_error_description = 0 then begin
+            json_output_array := TJSONArray(JSN.FindPath('instruments'));
+            instruments_count := json_output_array.Count;
+            SetLength(d_output.d_instruments, instruments_count);
+            i := 0;
+
+            while i < instruments_count do  begin
+               d_output.d_instruments[i].db_uid := JSN.FindPath('instruments[' + inttostr(i) + '].uid').AsString;
+               d_output.d_instruments[i].db_ticker := JSN.FindPath('instruments[' + inttostr(i) + '].ticker').AsString;
+               d_output.d_instruments[i].db_name := JSN.FindPath('instruments[' + inttostr(i) + '].name').AsString;
+               d_output.d_instruments[i].db_positionUid := JSN.FindPath('instruments[' + inttostr(i) + '].positionUid').AsString;
+               if JSN.FindPath('instruments[' + inttostr(i) + '].minPriceIncrement') <> nil then
+                  d_output.d_instruments[i].db_minPriceIncrement := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].minPriceIncrement.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].minPriceIncrement.nano').AsInt64);
+               d_output.d_instruments[i].db_lot := JSN.FindPath('instruments[' + inttostr(i) + '].lot').AsInt64;
+               if JSN.FindPath('nominal') <> nil then begin
+                  d_output.d_instruments[i].db_nominal.moneyval := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].nominal.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].nominal.nano').AsInt64);
+                  d_output.d_instruments[i].db_nominal.currency := JSN.FindPath('instruments[' + inttostr(i) + '].nominal.currency').AsString;
+               end;
+               d_output.d_instruments[i].db_currency := JSN.FindPath('instruments[' + inttostr(i) + '].currency').AsString;
+               d_output.d_instruments[i].db_maturityDate := JSN.FindPath('instruments[' + inttostr(i) + '].maturityDate').AsString;
+               d_output.d_instruments[i].db_shortEnabledFlag := JSN.FindPath('instruments[' + inttostr(i) + '].shortEnabledFlag').AsBoolean;
+               d_output.d_instruments[i].db_apiTradeAvailableFlag := JSN.FindPath('instruments[' + inttostr(i) + '].apiTradeAvailableFlag').AsBoolean;
+               d_output.d_instruments[i].db_buyAvailableFlag := JSN.FindPath('instruments[' + inttostr(i) + '].buyAvailableFlag').AsBoolean;
+               d_output.d_instruments[i].db_sellAvailableFlag := JSN.FindPath('instruments[' + inttostr(i) + '].sellAvailableFlag').AsBoolean;
+               d_output.d_instruments[i].db_limitOrderAvailableFlag := JSN.FindPath('instruments[' + inttostr(i) + '].limitOrderAvailableFlag').AsBoolean;
+               d_output.d_instruments[i].db_marketOrderAvailableFlag := JSN.FindPath('instruments[' + inttostr(i) + '].marketOrderAvailableFlag').AsBoolean;
+               d_output.d_instruments[i].db_bestpriceOrderAvailableFlag := JSN.FindPath('instruments[' + inttostr(i) + '].bestpriceOrderAvailableFlag').AsBoolean;
+               d_output.d_instruments[i].db_forIisFlag := JSN.FindPath('instruments[' + inttostr(i) + '].forIisFlag').AsBoolean;
+               d_output.d_instruments[i].db_forQualInvestorFlag := JSN.FindPath('instruments[' + inttostr(i) + '].forQualInvestorFlag').AsBoolean;
+               d_output.d_instruments[i].db_type := JSN.FindPath('instruments[' + inttostr(i) + '].type').AsString;
+
+               basicAssets_array := TJSONArray(JSN.FindPath('instruments[' + inttostr(i) + '].basicAssets'));
+               assets_count := basicAssets_array.Count;
+               SetLength(d_output.d_instruments[i].db_basicAssets, assets_count);
+               j := 0;
+
+               while j < assets_count do begin
+                  d_output.d_instruments[i].db_basicAssets[j] := JSN.FindPath('instruments[' + inttostr(i) + '].basicAssets[' + inttostr(j) + ']').AsString;
+                  inc(j);
+               end;
+
+               if JSN.FindPath('instruments[' + inttostr(i) + '].forecastYield.minValue') <> nil then
+                  d_output.d_instruments[i].db_forecastYield.db_minValue := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].forecastYield.minValue.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].forecastYield.minValue.nano').AsInt64);
+               if JSN.FindPath('instruments[' + inttostr(i) + '].forecastYield.maxValue') <> nil then
+                  d_output.d_instruments[i].db_forecastYield.db_maxValue := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].forecastYield.maxValue.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].forecastYield.maxValue.nano').AsInt64);
+               if JSN.FindPath('instruments[' + inttostr(i) + '].yieldToMaturity') <> nil then
+                  d_output.d_instruments[i].db_yieldToMaturity := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].yieldToMaturity.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].yieldToMaturity.nano').AsInt64);
+               if JSN.FindPath('instruments[' + inttostr(i) + '].couponValue') <> nil then
+                  d_output.d_instruments[i].db_couponValue := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].couponValue.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].couponValue.nano').AsInt64);
+               if JSN.FindPath('instruments[' + inttostr(i) + '].couponPaymentFrequency') <> nil then
+                  d_output.d_instruments[i].db_couponPaymentFrequency := JSN.FindPath('instruments[' + inttostr(i) + '].couponPaymentFrequency').AsInt64;
+               if JSN.FindPath('instruments[' + inttostr(i) + '].couponPaymentDate') <> nil then
+                  d_output.d_instruments[i].db_couponPaymentDate := JSN.FindPath('instruments[' + inttostr(i) + '].couponPaymentDate').AsString;
+               if JSN.FindPath('instruments[' + inttostr(i) + '].aciValue') <> nil then
+                  d_output.d_instruments[i].db_aciValue := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].aciValue.units').AsInt64 , JSN.FindPath('instruments[' + inttostr(i) + '].aciValue.nano').AsInt64);
+
+
+
+
+
+
+               inc(i);
+            end;
+         end;
+      end;
+   finally
+      Client.RequestBody.Free;
+      Client.Free;
+      Response.Free;
+      json_base.Free;
+      if status_code <> 0 then JSN.Free;
+   end;
+end;
 
 
 end.
