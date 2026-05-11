@@ -31,6 +31,12 @@ type
       Currency_limit : http_headers;
    end;
 
+   // структура для цены в виде units/nano
+   priceparts = record
+     units_part: Int64;                                                                                         // часть units
+     nano_part: Int64;                                                                                          // часть nano
+   end;
+
    // Структура для валюты
    MoneyStruct = record
       moneyval : double;                                                                                        // значение стоимости
@@ -198,6 +204,7 @@ type
       po_token : string;                                                                                        // Токен
       po_quantity : int64;                                                                                      // Количество лотов
       po_price : double;                                                                                        // Цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента. Игнорируется для рыночных поручений
+      po_minPriceIncrement : double;                                                                            // Шаг цены
       po_direction : string;                                                                                    // Направление операции [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       po_accountId : string;                                                                                    // Номер счета
       po_orderType : string;                                                                                    // Тип заявки [ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
@@ -245,6 +252,7 @@ type
       ro_idempotencyKey : string;                                                                               // Новый идентификатор запроса выставления поручения для целей идемпотентности. Максимальная длина 36 символов. Перезатирает старый ключ
       ro_quantity : int64;                                                                                      // Количество лотов
       ro_price : double;                                                                                        // Цена за 1 инструмент
+      ro_minPriceIncrement : double;                                                                            // Шаг цены
       ro_priceType : string;                                                                                    // Тип цены [PRICE_TYPE_POINT, PRICE_TYPE_CURRENCY]
       ro_confirmMarginTrade : boolean;                                                                          // Согласие на выставление заявки, которая может привести к непокрытой позиции, по умолчанию false
       ro_is_sandbox_flag : boolean;                                                                             // флаг работы в контуре песочницы
@@ -305,6 +313,7 @@ type
       gml_accountId : string;                                                                                   // Номер счета
       gml_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения instrument_uid
       gml_price : double;                                                                                       // Цена инструмента. Если не указывать цену инструмента, то расчет произведется по текущум ценам в стакане: по лучшему предложению для покупки и по лучшему спросу для продажи
+      gml_minPriceIncrement : double;                                                                           // Шаг цены
       gml_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
    end;
    gml_buyLimitsStruct = record
@@ -423,6 +432,7 @@ type
       gop_accountId : string;                                                                                   // Номер счета
       gop_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения instrument_uid
       gop_price : double;                                                                                       // Цена инструмента
+      gop_minPriceIncrement : double;                                                                           // Шаг цены
       gop_direction : string;                                                                                   // Направление заявки [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       gop_quantity : int64;                                                                                     // Количество лотов
       gop_is_sandbox_flag : boolean;                                                                            // флаг работы в контуре песочницы
@@ -965,6 +975,7 @@ type
       pso_quantity : int64;                                                                                     // Количество лотов
       pso_price : double;                                                                                       // Цена за 1 инструмент биржевой заявки, которая будет выставлена при срабатывании по достижению stop_price. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
       pso_stopPrice : double;                                                                                   // Стоп-цена заявки за 1 инструмент. При достижении стоп-цены происходит активация стоп-заявки, в результате чего выставляется биржевая заявка. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
+      pso_minPriceIncrement : double;                                                                           // Шаг цены
       pso_direction : string;                                                                                   // Направление сделки стоп-заявки [STOP_ORDER_DIRECTION_BUY, STOP_ORDER_DIRECTION_SELL]
       pso_accountId : string;                                                                                   // Идентификатор счета клиента
       pso_expirationType : string;                                                                              // Тип экспирации стоп-заявке [STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL, STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_DATE]
@@ -1392,6 +1403,7 @@ type
       poa_instrumentId : string;                                                                                // Идентификатор инструмента, принимает значения Instrument_uid
       poa_quantity : int64;                                                                                     // Количество лотов
       poa_price : double;                                                                                       // Цена за 1 инструмент. Для получения стоимости лота требуется умножить на лотность инструмента. Игнорируется для рыночных поручений
+      poa_minPriceIncrement : double;                                                                           // Шаг цены
       poa_direction : string;                                                                                   // Направление операции [ORDER_DIRECTION_BUY, ORDER_DIRECTION_SELL]
       poa_accountId : string;                                                                                   // Номер счета
       poa_orderType : string;                                                                                   // Тип заявки [ORDER_TYPE_LIMIT, ORDER_TYPE_MARKET, ORDER_TYPE_BESTPRICE]
@@ -2863,8 +2875,6 @@ type
    end;
 
 
-
-
 {InstrumentsService}
 procedure CreateFavoriteGroup (cfg_input : cfg_request; out cfg_output : cfg_response);                         // создать новую группу избранных инструментов
 procedure Currencies (c_input : c_request; out c_output : c_response);                                          // список валют
@@ -2964,6 +2974,7 @@ procedure SandboxPayIn (spi_input : spi_request; out spi_output : spi_response);
 
 function UnitsNanoToDouble(int_units, int_nano : int64) : double; inline;
 function ParseHeaders(const HeaderString: string): http_headers;
+function AdjustPriceToStep(const APrice, AStep: Extended): priceparts;
 
 implementation
 
@@ -3027,6 +3038,30 @@ begin
    end;
 end;
 
+function AdjustPriceToStep(const APrice, AStep: Extended): priceparts;
+const
+  SCALE: Int64 = 1000000000;
+
+var
+  ScaledPrice, ScaledStep, AdjustedAbs, Sign: Int64;
+begin
+  if AStep <= 0.0 then begin
+    Result.units_part := 0;
+    Result.nano_part := 0;
+    exit;
+  end;
+
+  Sign := 1;
+  if APrice < 0.0 then Sign := -1;
+
+  ScaledPrice := Trunc(Abs(APrice) * SCALE + 0.5);
+  ScaledStep := Trunc(AStep * SCALE + 0.5);
+
+  AdjustedAbs := ((ScaledPrice + (ScaledStep shr 1)) div ScaledStep) * ScaledStep;
+
+  Result.units_part := (AdjustedAbs div SCALE) * Sign;
+  Result.nano_part := (AdjustedAbs mod SCALE) * Sign;
+end;
 
 procedure GetAccounts(ga_input : ga_request; out ga_output : ga_response);
 var
@@ -5782,6 +5817,7 @@ var
    Response: TStringStream;
    status_code : int64;
    json_base, json_nested : TJSONObject;
+   gml_priceparts : priceparts;
 
 begin
    try
@@ -5796,8 +5832,9 @@ begin
       json_base.Add('accountId', gml_input.gml_accountId);
       json_base.Add('instrumentId', gml_input.gml_instrumentId);
       if gml_input.gml_price >0 then begin
-         json_nested.Add('nano', Trunc(Frac(gml_input.gml_price)*1000000000));
-         json_nested.Add('units', Trunc(gml_input.gml_price));
+         gml_priceparts := AdjustPriceToStep(gml_input.gml_price, gml_input.gml_minPriceIncrement);
+         json_nested.Add('nano', gml_priceparts.nano_part);
+         json_nested.Add('units', gml_priceparts.units_part);
          json_base.Add('price', json_nested);
       end;
 
@@ -5872,6 +5909,7 @@ var
    Response: TStringStream;
    status_code : int64;
    json_base, json_nested : TJSONObject;
+   po_priceparts : priceparts;
 
 begin
    try
@@ -5885,8 +5923,9 @@ begin
 
       json_base.Add('quantity', po_input.po_quantity);
       if po_input.po_price >0 then begin
-         json_nested.Add('nano', Trunc(Frac(po_input.po_price)*1000000000));
-         json_nested.Add('units', Trunc(po_input.po_price));
+         po_priceparts := AdjustPriceToStep(po_input.po_price, po_input.po_minPriceIncrement);
+         json_nested.Add('nano', po_priceparts.nano_part);
+         json_nested.Add('units', po_priceparts.units_part);
          json_base.Add('price', json_nested);
       end;
       json_base.Add('direction', po_input.po_direction);
@@ -5994,6 +6033,7 @@ var
    Response: TStringStream;
    status_code : int64;
    json_base, json_nested : TJSONObject;
+   poa_priceparts : priceparts;
 
 begin
    try
@@ -6008,8 +6048,9 @@ begin
       json_base.Add('instrumentId', poa_input.poa_instrumentId);
       json_base.Add('quantity', poa_input.poa_quantity);
       if poa_input.poa_price >0 then begin
-         json_nested.Add('nano', Trunc(Frac(poa_input.poa_price)*1000000000));
-         json_nested.Add('units', Trunc(poa_input.poa_price));
+         poa_priceparts := AdjustPriceToStep(poa_input.poa_price, poa_input.poa_minPriceIncrement);
+         json_nested.Add('nano', poa_priceparts.nano_part);
+         json_nested.Add('units', poa_priceparts.units_part);
          json_base.Add('price', json_nested);
       end;
       json_base.Add('direction', poa_input.poa_direction);
@@ -6082,6 +6123,7 @@ var
    Response: TStringStream;
    status_code : int64;
    json_base, json_nested : TJSONObject;
+   gop_priceparts : priceparts;
 
 begin
    try
@@ -6095,8 +6137,9 @@ begin
 
       json_base.Add('accountId', gop_input.gop_accountId);
       json_base.Add('instrumentId', gop_input.gop_instrumentId);
-      json_nested.Add('nano', Trunc(Frac(gop_input.gop_price)*1000000000));
-      json_nested.Add('units', Trunc(gop_input.gop_price));
+      gop_priceparts := AdjustPriceToStep(gop_input.gop_price, gop_input.gop_minPriceIncrement);
+      json_nested.Add('nano', gop_priceparts.nano_part);
+      json_nested.Add('units', gop_priceparts.units_part);
       json_base.Add('price', json_nested);
       json_base.Add('quantity', gop_input.gop_quantity);
 
@@ -6185,6 +6228,7 @@ var
    Response: TStringStream;
    status_code : int64;
    json_base, json_nested : TJSONObject;
+   ro_priceparts : priceparts;
 
 begin
    try
@@ -6200,8 +6244,9 @@ begin
       json_base.Add('orderId', ro_input.ro_orderId);
       json_base.Add('idempotencyKey', ro_input.ro_idempotencyKey);
       json_base.Add('quantity', ro_input.ro_quantity);
-      json_nested.Add('nano', Trunc(Frac(ro_input.ro_price)*1000000000));
-      json_nested.Add('units', Trunc(ro_input.ro_price));
+      ro_priceparts := AdjustPriceToStep(ro_input.ro_price, ro_input.ro_minPriceIncrement);
+      json_nested.Add('nano', ro_priceparts.nano_part);
+      json_nested.Add('units', ro_priceparts.units_part);
       json_base.Add('price', json_nested);
       json_base.Add('priceType', ro_input.ro_priceType);
       json_base.Add('confirmMarginTrade', ro_input.ro_confirmMarginTrade);
@@ -6301,6 +6346,7 @@ var
    Response: TStringStream;
    status_code : int64;
    json_base, json_price, json_stopPrice, json_indent, json_trailingData, json_spread  : TJSONObject;
+   pso_price_priceparts, pso_stopprice_priceparts : priceparts;
 
 begin
    try
@@ -6317,14 +6363,16 @@ begin
       json_spread := TJSONObject.Create;
 
       if pso_input.pso_quantity > 0 then json_base.Add('quantity', pso_input.pso_quantity);
-      if pso_input.pso_price >0 then begin
-         json_price.Add('nano', (Trunc(Frac(pso_input.pso_price)*1000000000)));
-         json_price.Add('units', Trunc(pso_input.pso_price));
+      if pso_input.pso_price > 0 then begin
+         pso_price_priceparts := AdjustPriceToStep(pso_input.pso_price, pso_input.pso_minPriceIncrement);
+         json_price.Add('nano', pso_price_priceparts.nano_part);
+         json_price.Add('units', pso_price_priceparts.units_part);
          json_base.Add('price', json_price);
       end;
-      if pso_input.pso_stopPrice >0 then begin
-         json_stopPrice.Add('nano', (Trunc(Frac(pso_input.pso_stopPrice)*1000000000)));
-         json_stopPrice.Add('units', Trunc(pso_input.pso_stopPrice));
+      if pso_input.pso_stopPrice > 0 then begin
+         pso_stopprice_priceparts := AdjustPriceToStep(pso_input.pso_stopPrice, pso_input.pso_minPriceIncrement);
+         json_stopPrice.Add('nano', pso_stopprice_priceparts.nano_part);
+         json_stopPrice.Add('units', pso_stopprice_priceparts.units_part);
          json_base.Add('stopPrice', json_stopPrice);
       end;
       json_base.Add('direction', pso_input.pso_direction);
