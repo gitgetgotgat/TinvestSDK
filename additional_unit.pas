@@ -80,6 +80,26 @@ type
       gmacd_macd_arr : array of gmacd_arrStruct;                                                                // массив параметров MACD
    end;
 
+   // Структуры для процедуры Get_ENVELOPE
+   genvelope_request = record
+      genvelope_fast_ema_period : int64;                                                                        // период для быстрой EMA (обычно 13)
+      genvelope_slow_ema_period : int64;                                                                        // период для медленной EMA (обычно 26)
+      genvelope_envelope_period : int64;                                                                        // период для конверта (обычно 100)
+      genvelope_envelope_multiplier : int64;                                                                    // множитель ширины конверта (обычно 2)
+      genvelope_candles : array of gc_candlesStruct;                                                            // массив свечек
+   end;
+   genvelope_arrStruct = record
+      genvelope_low_line : double;                                                                              // массив значений нижней линии
+      genvelope_high_line : double;                                                                             // массив значений верхней линии
+      genvelope_fast_line : double;                                                                             // массив значений быстрой линии EMA
+      genvelope_slow_line : double;                                                                             // массив значений медленной линии EMA
+      genvelope_time : string;
+   end;
+   genvelope_response = record
+      genvelope_envelope_arr : array of genvelope_arrStruct;                                                    // массив параметров MACD
+   end;
+
+
 
 function Get_UUID() : string;
 function ISOToLocalTime(const ISOStr: string) : string;
@@ -91,7 +111,7 @@ procedure Get_RSI (grsi_input : grsi_request; out grsi_output : grsi_response); 
 procedure Get_HEIKEN_ASHI (gha_input : gha_request; out gha_output : gha_response);                             // расчет индикатора свечек Хейкен Аши
 procedure Get_ATR (gatr_input : gatr_request; out gatr_output : gatr_response);                                 // расчет индикатора ATR
 procedure Get_MACD (gmacd_input : gmacd_request; out gmacd_output : gmacd_response);                            // расчет индикатора MACD
-
+procedure Get_ENVELOPE (genvelope_input : genvelope_request; out genvelope_output : genvelope_response);        // расчет индикатора MACD
 
 implementation
 
@@ -126,6 +146,10 @@ var
   MSecPart: string;
   P: Integer;
 begin
+  if ISOStr = '' then begin
+     Result := '';
+     exit;
+  end;
 
   Y := StrToInt(Copy(ISOStr, 1, 4));
   M := StrToInt(Copy(ISOStr, 6, 2));
@@ -212,6 +236,8 @@ var
    EMA_solv : double;
 
 begin
+   if gema_input.gema_period < 1 then exit;
+
    summ_ema := 0;
    EMA_solv := 0;
 
@@ -253,6 +279,8 @@ var
    Change_arr, Gain_arr, Loss_arr, Av_Gain_arr, Av_Loss_arr, RS : array of double;
 
 begin
+   if grsi_input.grsi_period < 1 then exit;
+
    count_candles := high(grsi_input.grsi_candles);
    i := 0;
 
@@ -352,6 +380,7 @@ var
    Av_TR : double;
 
 begin
+   if gatr_input.gatr_period < 1 then exit;
 
    count_candles := high(gatr_input.gatr_candles);
    i := 0;
@@ -396,6 +425,9 @@ var
    ema_fast, ema_slow : array of double;
 
 begin
+   if gmacd_input.gmacd_smoothing_period < 1 then exit;
+   if gmacd_input.gmacd_slow_period < 1 then exit;
+   if gmacd_input.gmacd_fast_period < 1 then exit;
 
    summ_ema1 := 0;
    summ_ema2 := 0;
@@ -459,6 +491,95 @@ begin
    end;
 end;
 
+procedure Get_ENVELOPE (genvelope_input : genvelope_request; out genvelope_output : genvelope_response);
+var
+   count_candles, i, j : int64;
+   summ_ema1, summ_ema2, max_val : double;
+   ema_fast, ema_slow, delta_abs, delta_sqr, sma, arr_sqrt : array of double;
+
+begin
+   if genvelope_input.genvelope_slow_ema_period < 1 then exit;
+   if genvelope_input.genvelope_fast_ema_period < 1 then exit;
+   if genvelope_input.genvelope_envelope_period < 1 then exit;
+
+   count_candles := high(genvelope_input.genvelope_candles);
+   i := 0;
+   j := 0;
+
+   SetLength(genvelope_output.genvelope_envelope_arr, count_candles + 1);
+
+   SetLength(ema_fast, count_candles + 1);
+   SetLength(ema_slow, count_candles + 1);
+   SetLength(delta_abs, count_candles + 1);
+   SetLength(delta_sqr, count_candles + 1);
+   SetLength(sma, count_candles + 2);
+   SetLength(arr_sqrt, count_candles + 1);
+
+   summ_ema1 := 0;
+   summ_ema2 := 0;
+
+   while i <= count_candles do begin
+
+      // расчет быстрой EMA
+      if i < genvelope_input.genvelope_fast_ema_period  then begin
+         summ_ema1 := summ_ema1 + genvelope_input.genvelope_candles[i].gc_close;
+      end;
+      if i = (genvelope_input.genvelope_fast_ema_period - 1) then begin
+         summ_ema1 := summ_ema1 / genvelope_input.genvelope_fast_ema_period;
+         ema_fast[i] := summ_ema1;
+      end;
+      if i > (genvelope_input.genvelope_fast_ema_period - 1) then begin
+         ema_fast[i] := genvelope_input.genvelope_candles[i].gc_close * (2 / (genvelope_input.genvelope_fast_ema_period + 1)) + ema_fast[i - 1] * (1-(2 / (genvelope_input.genvelope_fast_ema_period + 1)));
+      end;
+
+      // расчет медленной EMA
+      if i < genvelope_input.genvelope_slow_ema_period  then begin
+         summ_ema2 := summ_ema2 + genvelope_input.genvelope_candles[i].gc_close;
+      end;
+      if i = (genvelope_input.genvelope_slow_ema_period - 1) then begin
+         summ_ema2 := summ_ema2 / genvelope_input.genvelope_slow_ema_period;
+         ema_slow[i] := summ_ema2;
+
+         delta_abs[i] := abs(ema_slow[i] - genvelope_input.genvelope_candles[i].gc_close);
+         delta_sqr[i] := delta_abs[i] * delta_abs[i];
+
+      end;
+      if i > (genvelope_input.genvelope_slow_ema_period - 1) then begin
+         ema_slow[i] := genvelope_input.genvelope_candles[i].gc_close * (2 / (genvelope_input.genvelope_slow_ema_period + 1)) + ema_slow[i - 1] * (1-(2 / (genvelope_input.genvelope_slow_ema_period + 1)));
+
+         delta_abs[i] := abs(ema_slow[i] - genvelope_input.genvelope_candles[i].gc_close);
+         delta_sqr[i] := delta_abs[i] * delta_abs[i];
+
+
+         if i >= (genvelope_input.genvelope_envelope_period-1) then begin
+            sma[i+1] := 0;
+            max_val := 0;
+
+            j := i - (genvelope_input.genvelope_envelope_period-1);
+            while j <= i do begin
+               sma[i+1] := sma[i+1] + delta_sqr[j];
+
+               inc(j);
+            end;
+            sma[i+1] := sma[i+1] / genvelope_input.genvelope_envelope_period;
+            arr_sqrt[i] := sqrt(sma[i+1]);
+
+            max_val := max(max(max(max(arr_sqrt[i], arr_sqrt[i-1]), arr_sqrt[i-2]), arr_sqrt[i-3]), arr_sqrt[i-4]);
+            genvelope_output.genvelope_envelope_arr[i].genvelope_low_line := ema_slow[i] - genvelope_input.genvelope_envelope_multiplier * max_val;
+            genvelope_output.genvelope_envelope_arr[i].genvelope_high_line := ema_slow[i] + genvelope_input.genvelope_envelope_multiplier * max_val;
+
+
+            genvelope_output.genvelope_envelope_arr[i].genvelope_fast_line := ema_fast[i];
+            genvelope_output.genvelope_envelope_arr[i].genvelope_slow_line := ema_slow[i];
+            genvelope_output.genvelope_envelope_arr[i].genvelope_time := genvelope_input.genvelope_candles[i].gc_time;
+
+         end;
+
+      end;
+
+      inc(i);
+   end;
+end;
 
 end.
 
