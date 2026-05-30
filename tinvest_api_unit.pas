@@ -90,6 +90,9 @@ type
       gp_varMargin : MoneyStruct;                                                                               // Вариационная маржа
       gp_expectedYieldFifo : double;                                                                            // Текущая рассчитанная доходность позиции
       gp_dailyYield : MoneyStruct;                                                                              // Рассчитанная доходность портфеля за день
+      gp_ticker : string;                                                                                       // Тикер инструмента
+      gp_classCode : string;                                                                                    // Класс-код (секция торгов)
+      gp_varMarginSettled : MoneyStruct;                                                                        // Вариационная маржа (расчетная)
    end;
    gp_virtualportfoliopositionStruct = record
       gp_positionUid : string;                                                                                  // Уникальный идентификатор позиции
@@ -103,6 +106,8 @@ type
       gp_currentPrice : double;                                                                                 // Текущая цена за 1 инструмент. Чтобы получить стоимость лота, нужно умножить на лотность инструмента
       gp_averagePositionPriceFifo : double;                                                                     // Средняя цена позиции по методу FIFO. Для пересчета возможна задержка до одной секунды
       gp_dailyYield : MoneyStruct;                                                                              // Рассчитанная доходность портфеля за день
+      gp_ticker : string;                                                                                       // Тикер инструмента
+      gp_classCode : string;                                                                                    // Класс-код (секция торгов)
    end;
    gp_response = record                                                                                         // Ответ для GetPortfolio
       gp_totalAmountShares : MoneyStruct;                                                                       // Общая стоимость акций в портфеле
@@ -2030,6 +2035,11 @@ type
       ind_token : string;                                                                                       // Токен
    end;
 
+   ind_indexCompositionStruct = record
+      ind_uid : string;                                                                                         // Идентификатор инструмента
+      ind_weight : double;                                                                                      // Вес инструмента в составе индекса в %
+   end;
+
    ind_instrumentsStruct = record
       ind_ticker : string;                                                                                      // Тикер инструмента
       ind_classCode : string;                                                                                   // Класс-код инструмента
@@ -2040,6 +2050,7 @@ type
       ind_uid : string;                                                                                         // Уникальный идентификатор инструмента
       ind_buyAvailableFlag : boolean;                                                                           // Признак доступности для покупки
       ind_sellAvailableFlag : boolean;                                                                          // Признак доступности для продажи
+      ind_indexComposition : array of ind_indexCompositionStruct;                                               // Состав индекса
    end;
 
    ind_response = record                                                                                        // Ответ для Indicatives
@@ -2874,6 +2885,49 @@ type
       d_x_tracking_id : string;                                                                                 // grpc-metadata-x-tracking-id для служебных целей
    end;
 
+   // Структуры для процедуры GetNews
+   gn_request = record
+      gn_token : string;                                                                                        // Токен
+      gn_cursor : string;                                                                                       // Идентификатор элемента, с которого начать формировать ответ
+      gn_limit : int64;                                                                                         // Лимит количества новостей в ответе. По умолчанию 1000
+   end;
+
+   gn_tablesStruct = record
+      gn_table : string;                                                                                        // Таблица
+   end;
+
+   gn_instrumentStruct = record
+      gn_instrumentUid : string;                                                                                // Уникальный идентификатор инструмента
+      gn_ticker : string;                                                                                       // Тикер инструмента
+      gn_classCode : string;                                                                                    // Класс-код (секция торгов)
+   end;
+
+   gn_instrumentIdStruct = record
+      gn_instrument : gn_instrumentStruct;                                                                      // Объект информации по инструменту из новости
+   end;
+
+   gn_itemsStruct = record
+      gn_id : int64;                                                                                            // Уникальный идентификатор новости
+      gn_source : string;                                                                                       // Источник новости
+      gn_title : string;                                                                                        // Заголовок новости
+      gn_content : string;                                                                                      // Содержание новости
+      gn_summary : string;                                                                                      // Обобщенная информация
+      gn_tables : array of gn_tablesStruct;                                                                     // Табличные данные
+      gn_instrumentId : array of gn_instrumentIdStruct;                                                         // Инструменты из новости
+      gn_priority : boolean;                                                                                    // Флаг, указывающий, важная ли новость
+      gn_ts : string;                                                                                           // Время новости
+   end;
+
+   gn_response = record
+      gn_hasNext : boolean;                                                                                     // Признак, есть ли еще новости
+      gn_nextCursor : string;                                                                                   // Следующий курсор
+      gn_items : array of gn_itemsStruct;                                                                       // Массив новостей
+      gn_error_code : int64;                                                                                    // Уникальный идентификатор ошибки
+      gn_error_message : string;                                                                                // Пользовательское сообщение об ошибке
+      gn_error_description : int64;                                                                             // Код ошибки
+      gn_x_tracking_id : string;                                                                                // grpc-metadata-x-tracking-id для служебных целей
+   end;
+
 
 {InstrumentsService}
 procedure CreateFavoriteGroup (cfg_input : cfg_request; out cfg_output : cfg_response);                         // создать новую группу избранных инструментов
@@ -2908,6 +2962,7 @@ procedure GetFutures (f_input : f_request; out f_output : f_response);          
 procedure GetFuturesMargin (gfm_input : gfm_request; out gfm_output : gfm_response);                            // размер гарантийного обеспечения по фьючерсам
 procedure GetInsiderDeals (gid_input : gid_request; out gid_output : gid_response);                             // сделки инсайдеров по инструментам
 procedure GetInstrumentBy (gib_input : gib_request; out gib_output : gib_response);                             // основная информация об инструменте
+procedure GetNews (gn_input : gn_request; out gn_output : gn_response);                                         // получение актуальных новостей
 procedure GetOptionBy (ob_input : ob_request; out ob_output : ob_response);                                     // получить опцион по его идентификатору
 procedure GetOptionsBy (o_input : o_request; out o_output : o_response);                                        // список опционов
 procedure GetRiskRates (grr_input : grr_request; out grr_output : grr_response);                                // ставки риска по инструменту
@@ -3273,6 +3328,10 @@ begin
                gp_output.gp_positions[i].gp_expectedYieldFifo := UnitsNanoToDouble(JSN.FindPath('positions[' + inttostr(i) + '].expectedYieldFifo.units').AsInt64 , JSN.FindPath('positions[' + inttostr(i) + '].expectedYieldFifo.nano').AsInt64);
                gp_output.gp_positions[i].gp_dailyYield.moneyval := UnitsNanoToDouble(JSN.FindPath('positions[' + inttostr(i) + '].dailyYield.units').AsInt64 , JSN.FindPath('positions[' + inttostr(i) + '].dailyYield.nano').AsInt64);
                gp_output.gp_positions[i].gp_dailyYield.currency := JSN.FindPath('positions[' + inttostr(i) + '].dailyYield.currency').AsString;
+               gp_output.gp_positions[i].gp_ticker := JSN.FindPath('positions[' + inttostr(i) + '].ticker').AsString;
+               gp_output.gp_positions[i].gp_classCode := JSN.FindPath('positions[' + inttostr(i) + '].classCode').AsString;
+               gp_output.gp_positions[i].gp_varMarginSettled.moneyval := UnitsNanoToDouble(JSN.FindPath('positions[' + inttostr(i) + '].varMarginSettled.units').AsInt64 , JSN.FindPath('positions[' + inttostr(i) + '].varMarginSettled.nano').AsInt64);
+               gp_output.gp_positions[i].gp_varMarginSettled.currency := JSN.FindPath('positions[' + inttostr(i) + '].varMarginSettled.currency').AsString;
                inc(i);
             end;
 
@@ -3289,6 +3348,8 @@ begin
                gp_output.gp_virtualPositions[j].gp_averagePositionPriceFifo := UnitsNanoToDouble(JSN.FindPath('virtualPositions[' + inttostr(j) + '].averagePositionPriceFifo.units').AsInt64 , JSN.FindPath('virtualPositions[' + inttostr(j) + '].averagePositionPriceFifo.nano').AsInt64);
                gp_output.gp_virtualPositions[j].gp_dailyYield.moneyval := UnitsNanoToDouble(JSN.FindPath('virtualPositions[' + inttostr(j) + '].dailyYield.units').AsInt64 , JSN.FindPath('virtualPositions[' + inttostr(j) + '].dailyYield.nano').AsInt64);
                gp_output.gp_virtualPositions[j].gp_dailyYield.currency := JSN.FindPath('virtualPositions[' + inttostr(i) + '].dailyYield.currency').AsString;
+               gp_output.gp_virtualPositions[i].gp_ticker := JSN.FindPath('virtualPositions[' + inttostr(i) + '].ticker').AsString;
+               gp_output.gp_virtualPositions[i].gp_classCode := JSN.FindPath('virtualPositions[' + inttostr(i) + '].classCode').AsString;
                inc(j);
             end;
          end;
@@ -9443,11 +9504,11 @@ end;
 procedure Indicatives (ind_input : ind_request; out ind_output : ind_response);
 var
    JSN: TJSONData;
-   json_output_array : TJSONArray;
+   json_output_array, json_indexComp_array : TJSONArray;
    endpoint_url, json_output_struct, json_request : string;
    Client: TFPHttpClient;
    Response: TStringStream;
-   status_code, instruments_count, i : int64;
+   status_code, instruments_count, indexComp_count, i, j : int64;
 
 begin
    try
@@ -9510,6 +9571,19 @@ begin
                ind_output.ind_instruments[i].ind_uid := JSN.FindPath('instruments[' + inttostr(i) + '].uid').AsString;
                ind_output.ind_instruments[i].ind_buyAvailableFlag := JSN.FindPath('instruments[' + inttostr(i) + '].buyAvailableFlag').AsBoolean;
                ind_output.ind_instruments[i].ind_sellAvailableFlag := JSN.FindPath('instruments[' + inttostr(i) + '].sellAvailableFlag').AsBoolean;
+
+               json_indexComp_array := TJSONArray(JSN.FindPath('instruments[' + inttostr(i) + '].indexComposition'));
+               indexComp_count := json_indexComp_array.Count;
+               SetLength(ind_output.ind_instruments[i].ind_indexComposition, indexComp_count);
+               j := 0;
+
+               while j < indexComp_count do  begin
+                  ind_output.ind_instruments[i].ind_indexComposition[j].ind_uid := JSN.FindPath('instruments[' + inttostr(i) + '].indexComposition[' + inttostr(j) + '].uid').AsString;
+                  ind_output.ind_instruments[i].ind_indexComposition[j].ind_weight := UnitsNanoToDouble(JSN.FindPath('instruments[' + inttostr(i) + '].indexComposition[' + inttostr(j) + '].weight.units').AsInt64, JSN.FindPath('instruments[' + inttostr(i) + '].indexComposition[' + inttostr(j) + '].weight.nano').AsInt64);
+                  inc(j);
+               end;
+
+
                inc(i);
             end;
          end;
@@ -12032,6 +12106,121 @@ begin
    end;
 end;
 
+procedure GetNews (gn_input : gn_request; out gn_output : gn_response);
+var
+   JSN: TJSONData;
+   json_output_array : TJSONArray;
+   endpoint_url, json_output_struct, json_request : string;
+   Client: TFPHttpClient;
+   Response: TStringStream;
+   news_count, tables_count, instrumentId_count, status_code, i, j, k : int64;
+   json_base : TJSONObject;
+begin
+   try
+      if requests_limit.InstrumentsService_limit.h_ratelimit_remaining <= 1 then begin
+         Sleep(requests_limit.InstrumentsService_limit.h_ratelimit_reset * 1000);
+         requests_limit.InstrumentsService_limit.h_ratelimit_remaining := requests_limit.InstrumentsService_limit.h_ratelimit_limit - 1;
+      end;
+
+      json_base := TJSONObject.Create;
+
+      if gn_input.gn_cursor <> '' then json_base.Add('cursor', gn_input.gn_cursor);
+      if gn_input.gn_limit > 0 then json_base.Add('limit', gn_input.gn_limit);
+
+      endpoint_url := url_prod + 'InstrumentsService/News';
+
+      json_request := json_base.AsJSON;
+
+      InitSSLInterface;
+      Client := TFPHttpClient.Create(nil);
+      Client.AllowRedirect:=true;
+      Client.AddHeader('Content-Type', 'application/json');
+      Client.AddHeader('Accept', 'application/json');
+      Client.AddHeader('x-app-name', 'gitgetgotgat.TinvestSDK');
+      Client.AddHeader('Authorization', 'Bearer ' + gn_input.gn_token);
+
+      Client.AllowRedirect := true;
+      Client.RequestBody := TRawByteStringStream.Create(json_request);
+      Response := TStringStream.Create('');
+
+      try
+         Client.Post(endpoint_url, Response);
+      except on E: Exception do
+         gn_output := default(gn_response);
+      end;
+
+      requests_limit.InstrumentsService_limit := ParseHeaders(Client.ResponseHeaders.Text);
+      gn_output.gn_x_tracking_id := requests_limit.InstrumentsService_limit.h_tracking_id;
+
+      status_code := Client.ResponseStatusCode;
+      if status_code <> 0 then begin
+
+         SetString(json_output_struct,pchar(Response.Bytes),high(Response.Bytes));
+
+         JSN := GetJSON(json_output_struct);
+
+         if JSN.FindPath('description') <> nil then begin
+            gn_output.gn_error_code := JSN.FindPath('code').AsInt64;
+            gn_output.gn_error_message := JSN.FindPath('message').AsString;
+            gn_output.gn_error_description := JSN.FindPath('description').AsInt64;
+         end;
+
+         if gn_output.gn_error_description = 0 then begin
+            json_output_array := TJSONArray(JSN.FindPath('items'));
+            news_count := json_output_array.Count;
+            SetLength(gn_output.gn_items, news_count);
+            i := 0;
+
+            gn_output.gn_hasNext := JSN.FindPath('hasNext').AsBoolean;
+            gn_output.gn_nextCursor := JSN.FindPath('nextCursor').AsString;
+
+            while i < news_count do  begin
+               gn_output.gn_items[i].gn_id := JSN.FindPath('items[' + inttostr(i) + '].id').AsInt64;
+               gn_output.gn_items[i].gn_source := JSN.FindPath('items[' + inttostr(i) + '].source').AsString;
+               gn_output.gn_items[i].gn_title := JSN.FindPath('items[' + inttostr(i) + '].title').AsString;
+               gn_output.gn_items[i].gn_content := JSN.FindPath('items[' + inttostr(i) + '].content').AsString;
+               if JSN.FindPath('items[' + inttostr(i) + '].summary') <> nil then
+                  gn_output.gn_items[i].gn_summary := JSN.FindPath('items[' + inttostr(i) + '].summary').AsString;
+
+               if JSN.FindPath('items[' + inttostr(i) + '].tables') <> nil then begin
+                  json_output_array := TJSONArray(JSN.FindPath('items[' + inttostr(i) + '].tables'));
+                  tables_count := json_output_array.Count;
+                  SetLength(gn_output.gn_items[i].gn_tables, tables_count);
+
+                  while j < tables_count do  begin
+                     gn_output.gn_items[i].gn_tables[j].gn_table := JSN.FindPath('items[' + inttostr(i) + '].tables[' + inttostr(j) + '].table').AsString;
+                     inc(j);
+                  end;
+               end;
+
+               if JSN.FindPath('items[' + inttostr(i) + '].instrumentId') <> nil then begin
+                  json_output_array := TJSONArray(JSN.FindPath('items[' + inttostr(i) + '].instrumentId'));
+                  instrumentId_count := json_output_array.Count;
+                  SetLength(gn_output.gn_items[i].gn_instrumentId, instrumentId_count);
+
+                  while k < instrumentId_count do  begin
+                     gn_output.gn_items[i].gn_instrumentId[k].gn_instrument.gn_instrumentUid := JSN.FindPath('items[' + inttostr(i) + '].instrumentId[' + inttostr(k) + '].instrument.instrumentUid').AsString;
+                     gn_output.gn_items[i].gn_instrumentId[k].gn_instrument.gn_ticker := JSN.FindPath('items[' + inttostr(i) + '].instrumentId[' + inttostr(k) + '].instrument.ticker').AsString;
+                     gn_output.gn_items[i].gn_instrumentId[k].gn_instrument.gn_classCode := JSN.FindPath('items[' + inttostr(i) + '].instrumentId[' + inttostr(k) + '].instrument.classCode').AsString;
+                     inc(k);
+                  end;
+               end;
+
+               gn_output.gn_items[i].gn_priority := JSN.FindPath('items[' + inttostr(i) + '].priority').AsBoolean;
+               gn_output.gn_items[i].gn_ts := JSN.FindPath('items[' + inttostr(i) + '].ts').AsString;
+
+               inc(i);
+            end;
+         end;
+      end;
+   finally
+      Client.RequestBody.Free;
+      Client.Free;
+      Response.Free;
+      json_base.Free;
+      if status_code <> 0 then JSN.Free;
+   end;
+end;
 
 end.
 
